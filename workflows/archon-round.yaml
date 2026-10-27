@@ -1,0 +1,88 @@
+type: graph
+working_dir: ${params.project_dir}
+params:
+- name: state_dir
+  type: string
+- name: project_dir
+  type: string
+env:
+  STATE_DIR: ${params.state_dir}
+steps:
+- id: implement
+  run: python -m archon_dagu.engine stage implement
+- id: pr
+  run: python -m archon_dagu.engine stage pr
+  depends:
+  - implement
+- id: scope
+  run: python -m archon_dagu.engine stage scope
+  depends:
+  - pr
+- id: route
+  run: python -m archon_dagu.engine stage route
+  depends:
+  - scope
+- id: seams
+  depends:
+  - route
+  run: python -m archon_dagu.engine stage seams
+- id: code
+  depends:
+  - route
+  run: python -m archon_dagu.engine stage code
+- id: tests
+  depends:
+  - route
+  run: python -m archon_dagu.engine stage tests
+- id: errors
+  depends:
+  - route
+  run: python -m archon_dagu.engine stage errors
+- id: docs
+  depends:
+  - route
+  run: python -m archon_dagu.engine stage docs
+- id: review
+  depends:
+  - seams
+  - code
+  - tests
+  - errors
+  - docs
+  run: python -m archon_dagu.engine stage review
+- id: publish_review
+  depends:
+  - review
+  run: python -m archon_dagu.engine stage publish-review
+- id: simplify
+  depends:
+  - publish_review
+  run: python -m archon_dagu.engine stage simplify
+- id: reshape
+  depends:
+  - simplify
+  run: python -m archon_dagu.engine stage reshape
+- id: rereview
+  depends:
+  - reshape
+  run: python -m archon_dagu.engine stage rereview
+- id: publish_rereview
+  depends:
+  - rereview
+  run: python -m archon_dagu.engine stage publish-rereview
+- id: settle_threads
+  depends:
+  - publish_rereview
+  run: python -m archon_dagu.engine stage settle-threads
+- id: ci
+  depends:
+  - settle_threads
+  run: python -m archon_dagu.engine stage ci
+- id: threads
+  depends:
+  - ci
+  run: python -m archon_dagu.engine stage threads
+- id: reduce
+  depends:
+  - threads
+  run: python -m archon_dagu.engine stage reduce

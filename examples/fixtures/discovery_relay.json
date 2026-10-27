@@ -1,0 +1,21 @@
+{
+  "rounds": [
+    {
+      "review": {
+        "discoveries": [
+          {
+            "title": "Unrelated base defect",
+            "claim": "Existing defect outside this change",
+            "evidence": [
+              "fixture log"
+            ],
+            "relation": "unrelated",
+            "source_nodes": [
+              "code"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

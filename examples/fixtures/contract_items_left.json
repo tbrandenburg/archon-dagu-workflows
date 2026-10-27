@@ -1,0 +1,11 @@
+{
+  "rounds": [
+    {
+      "review": {
+        "contract_left": [
+          "Operator must verify production configuration"
+        ]
+      }
+    }
+  ]
+}

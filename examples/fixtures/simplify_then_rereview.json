@@ -1,0 +1,9 @@
+{
+  "rounds": [
+    {
+      "simplify": {
+        "findings": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "rounds": [
+    {
+      "fail": "update-pr-body"
+    }
+  ]
+}
