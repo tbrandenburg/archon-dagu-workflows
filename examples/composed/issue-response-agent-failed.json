@@ -1,0 +1,24 @@
+{
+  "workflow": "issue-response",
+  "agents": {
+    "classify": {
+      "route": "investigate",
+      "reason": "Fixture classification."
+    },
+    "investigate": {
+      "comment": "Fixture draft: the likely cause is an unchecked empty input.\nConfirm with the focused regression test. Literal `$()` stays text."
+    }
+  },
+  "artifacts": {},
+  "decision": "approve",
+  "parameters": {
+    "repository": "example/repo",
+    "issue_number": "7"
+  },
+  "expected": {
+    "failure": true
+  },
+  "fail": [
+    "investigate"
+  ]
+}

@@ -134,14 +134,14 @@ def invoke(argv, cwd, env, stdin="", timeout=3600):
 
 
 class Run:
-    def __init__(self, root):
+    def __init__(self, root, sources=None):
         self.root = pathlib.Path(root).resolve()
         self.ctx = load(self.root / "context.json")
         if not self.ctx:
             raise ValueError("Run setup first")
         self.name = self.ctx["workflow"]
         self.fixture = self.ctx["mode"] == "fixture"
-        self.doc = yaml.safe_load((SOURCE / SOURCES[self.name]).read_text())
+        self.doc = yaml.safe_load((SOURCE / (sources or SOURCES)[self.name]).read_text())
         self.nodes = {n["id"]: n for n in self.doc["nodes"]}
         self.repo = pathlib.Path(self.ctx["checkout"])
         self.config = self.ctx["config"]
@@ -260,11 +260,18 @@ class Run:
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(text)
             return result
-        prompt = (BASE / "prompts/standalone" / f"{self.name}-{node['id']}.md").read_text()
+        prompt = (
+            BASE
+            / "prompts"
+            / self.ctx.get("prompt_namespace", "standalone")
+            / f"{self.name}-{node['id']}.md"
+        ).read_text()
         values = {**self.ctx["inputs"], **self.bindings(node)}
         substitutions = {"$INPUTS." + k: canonical(v) for k, v in values.items()}
         substitutions.update(
             {
+                "$BASE_BRANCH": self.env.get("BASE_BRANCH", ""),
+                "$TYPED_ARTIFACTS_FILE": self.env.get("TYPED_ARTIFACTS_FILE", ""),
                 "$ARCHON_CLI_COMMAND": self.env["ARCHON_CLI_COMMAND"],
                 "$ARTIFACTS_DIR": str(self.root),
                 "$WORKFLOW_ID": self.root.name,
@@ -279,7 +286,14 @@ class Run:
             }
         )
         for key in self.nodes:
-            substitutions["$" + key + ".output"] = canonical(self.result(key))
+
+            def fields(prefix, value):
+                substitutions[prefix] = canonical(value)
+                if isinstance(value, dict):
+                    for field, child in value.items():
+                        fields(prefix + "." + field, child)
+
+            fields("$" + key + ".output", self.result(key))
         # One pass: operator text containing tokens must never be expanded again.
         prompt = re.sub(
             "|".join(re.escape(k) for k in sorted(substitutions, key=len, reverse=True)),
@@ -445,11 +459,19 @@ class Run:
         return report
 
 
-def initialize(root, environ=None):
+def initialize(
+    root,
+    environ=None,
+    *,
+    sources=None,
+    extra_inputs=None,
+    mutating=("implement",),
+    require_work=("investigate", "plan", "triage", "implement"),
+):
     env = environ or os.environ
     root = pathlib.Path(root).resolve()
     name, mode = env["STANDALONE_WORKFLOW"], env["STANDALONE_MODE"]
-    if name not in SOURCES or mode not in ("fixture", "live"):
+    if name not in (sources or SOURCES) or mode not in ("fixture", "live"):
         raise ValueError("Unknown workflow/mode")
     config_path = pathlib.Path(env.get("STANDALONE_CONFIG", "config/standalone.json"))
     if not config_path.is_absolute():
@@ -471,6 +493,7 @@ def initialize(root, environ=None):
         "related": env.get("RELATED", "[]"),
         "publish": env.get("PUBLISH", "false"),
     }
+    inputs.update(extra_inputs or {})
     if inputs["publish"] not in ("true", "false"):
         raise ValueError("publish must be true or false")
     identity = digest([name, mode, config, fixture, inputs, env.get("TARGET_REPO", "")])
@@ -500,10 +523,7 @@ def initialize(root, environ=None):
         repo = pathlib.Path(env.get("TARGET_REPO", "")).resolve()
         claim = None
         if mode == "live":
-            if (
-                name in ("investigate", "plan", "triage", "implement")
-                and not inputs["work"].strip()
-            ):
+            if name in require_work and not inputs["work"].strip():
                 raise ValueError(
                     "Live workflow requires explicit input; no Archon trigger message is available"
                 )
@@ -541,7 +561,7 @@ def initialize(root, environ=None):
         else:
             checkout = root / "checkout"
             args = ["worktree", "add"]
-            args += ["-b", "dagu/implement-" + root.name] if name == "implement" else ["--detach"]
+            args += ["-b", "dagu/" + name + "-" + root.name] if name in mutating else ["--detach"]
             git(repo, *args, str(checkout), "HEAD")
         save(
             root / "context.json",

@@ -18,6 +18,10 @@ B = pathlib.Path(__file__).resolve().parents[2]
 
 def run(file, params, parent_env=None):
     d = yaml.safe_load(pathlib.Path(file).read_text())
+    if any(step.get("approval") for step in d["steps"]):
+        raise ValueError(
+            "Approval gates require native DAGU; the local harness cannot approve them"
+        )
     for p in d.get("params", []):
         if p["name"] not in params:
             if "default" not in p:

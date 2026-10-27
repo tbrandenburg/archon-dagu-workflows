@@ -7,7 +7,7 @@ Before opening a PR:
 ```bash
 make lint source-check generated-check test parity
 make tools
-make scenarios standalone-scenarios
+make scenarios standalone-scenarios composed-scenarios
 make ci-native
 ```
 
@@ -20,3 +20,5 @@ Tests should exercise decisions, missing evidence, publication identity and fail
 For problems, include the selected variant, fixture, tool versions and relevant log. Do not include credentials or private issue/source data. Report sensitive vulnerabilities through GitHub's private reporting options when available.
 
 Standalone stage contracts and operational concessions are documented in [docs/standalone.md](docs/standalone.md). Keep source-derived prompt copies exact. Use an explicit test-only Node config on restricted hosts; never substitute it for Bun/native execution in CI.
+
+See [composed workflows](docs/composed.md) for issue #3 cases and approval behavior. The local harness must refuse native approval gates. Use `COMPOSED_FIXTURE_CONFIG` only for explicit fixture-runtime selection on a restricted host.

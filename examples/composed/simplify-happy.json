@@ -1,0 +1,16 @@
+{
+  "workflow": "simplify",
+  "agents": {
+    "simplify": {
+      "findings": false
+    }
+  },
+  "artifacts": {
+    "simplify": {
+      "shape.md": "# Structure review\nFixture proof of smaller shape or examined-and-clean evidence.\n"
+    }
+  },
+  "expected": {
+    "findings": false
+  }
+}

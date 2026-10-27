@@ -4,6 +4,8 @@ vars:
   CASE: '{{default "fix_ci" .CASE}}'
   WORKFLOW: '{{default "investigate" .WORKFLOW}}'
   STANDALONE_CASE: '{{default "happy" .STANDALONE_CASE}}'
+  COMPOSED_WORKFLOW: '{{default "review" .COMPOSED_WORKFLOW}}'
+  COMPOSED_CASE: '{{default "happy" .COMPOSED_CASE}}'
   EXECUTOR: '{{default "local" .EXECUTOR}}'
 tasks:
   default:
@@ -59,12 +61,14 @@ tasks:
       - task: parity
       - task: scenarios
       - task: standalone-scenarios
+      - task: composed-scenarios
   ci-native:
     desc: Run native DAGU checks (requires installed DAGU and Unix sockets)
     cmds:
       - task: validate
       - task: native-smoke
       - task: standalone-native
+      - task: composed-native
   clean:
     desc: Remove generated run artifacts only
     cmds: [uv run python scripts/project.py clean]
@@ -81,3 +85,16 @@ tasks:
     cmds:
       - uv run python scripts/standalone.py validate
       - uv run python scripts/standalone.py scenarios --executor dagu
+
+  composed-demo:
+    desc: Run issue-3 fixture (COMPOSED_WORKFLOW, COMPOSED_CASE, EXECUTOR)
+    cmds:
+      - uv run python scripts/composed.py demo --workflow '{{.COMPOSED_WORKFLOW}}' --case '{{.COMPOSED_CASE}}' --executor '{{.EXECUTOR}}'
+  composed-scenarios:
+    desc: Run all issue-3 fixture cases locally
+    cmds: [uv run python scripts/composed.py scenarios]
+  composed-native:
+    desc: Preview twelve issue-3 entrypoints and execute all fixtures in native DAGU
+    cmds:
+      - uv run python scripts/composed.py validate
+      - uv run python scripts/composed.py scenarios --executor dagu

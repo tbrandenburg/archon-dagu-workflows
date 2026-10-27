@@ -5,7 +5,9 @@ CASE ?= fix_ci
 EXECUTOR ?= local
 WORKFLOW ?= investigate
 STANDALONE_CASE ?= happy
-.PHONY: standalone-demo standalone-scenarios standalone-native help setup tools generate format lint source-check generated-check test parity scenarios validate demo native-smoke ci ci-native clean
+COMPOSED_WORKFLOW ?= review
+COMPOSED_CASE ?= happy
+.PHONY: composed-demo composed-scenarios composed-native standalone-demo standalone-scenarios standalone-native help setup tools generate format lint source-check generated-check test parity scenarios validate demo native-smoke ci ci-native clean
 help: ## List common commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 setup: ## Install locked Python dependencies
@@ -36,8 +38,8 @@ demo: ## Run an offline example (VARIANT, CASE, EXECUTOR)
 	$(UV) run python scripts/project.py demo --variant '$(VARIANT)' --case '$(CASE)' --executor '$(EXECUTOR)'
 native-smoke: ## Run six actual DAGU fixture executions
 	$(UV) run python scripts/project.py native-smoke
-ci: lint source-check generated-check test parity scenarios standalone-scenarios ## Run credential-free checks
-ci-native: validate native-smoke standalone-native ## Run native engine checks
+ci: lint source-check generated-check test parity scenarios standalone-scenarios composed-scenarios ## Run credential-free checks
+ci-native: validate native-smoke standalone-native composed-native ## Run native engine checks
 clean: ## Remove run artifacts only
 	$(UV) run python scripts/project.py clean
 
@@ -48,3 +50,11 @@ standalone-scenarios: ## Execute all standalone fixtures locally
 standalone-native: ## Execute all standalone fixtures through actual DAGU
 	$(UV) run python scripts/standalone.py validate
 	$(UV) run python scripts/standalone.py scenarios --executor dagu
+
+composed-demo: ## Run issue-3 fixture (COMPOSED_WORKFLOW, COMPOSED_CASE, EXECUTOR)
+	$(UV) run python scripts/composed.py demo --workflow '$(COMPOSED_WORKFLOW)' --case '$(COMPOSED_CASE)' --executor '$(EXECUTOR)'
+composed-scenarios: ## Run all issue-3 fixture scenarios locally
+	$(UV) run python scripts/composed.py scenarios
+composed-native: ## Preview and execute issue-3 workflows with actual DAGU
+	$(UV) run python scripts/composed.py validate
+	$(UV) run python scripts/composed.py scenarios --executor dagu
