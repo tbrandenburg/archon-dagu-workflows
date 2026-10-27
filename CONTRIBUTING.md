@@ -6,8 +6,8 @@ Before opening a PR:
 
 ```bash
 make lint source-check generated-check test parity
-make scenarios
 make tools
+make scenarios standalone-scenarios
 make ci-native
 ```
 
@@ -18,3 +18,5 @@ Run `make generate` after changing workflow generation. Workflows/config/prompts
 Tests should exercise decisions, missing evidence, publication identity and failure behavior. CI has no model or forge credentials. Keep live integration changes marked experimental until they have real disposable-repository evidence. Pin tool versions and GitHub Actions commits; update `uv.lock` with dependency changes.
 
 For problems, include the selected variant, fixture, tool versions and relevant log. Do not include credentials or private issue/source data. Report sensitive vulnerabilities through GitHub's private reporting options when available.
+
+Standalone stage contracts and operational concessions are documented in [docs/standalone.md](docs/standalone.md). Keep source-derived prompt copies exact. Use an explicit test-only Node config on restricted hosts; never substitute it for Bun/native execution in CI.

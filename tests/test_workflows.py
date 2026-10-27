@@ -34,7 +34,13 @@ def test_only_root_real_workflows_ask_for_human_input():
     for file in (BASE / "workflows").glob("*.yaml"):
         data = yaml.safe_load(file.read_text())
         tasks = [s for s in data["steps"] if s.get("action") == "human.task"]
-        assert len(tasks) == (1 if file.stem.endswith("-real") else 0)
+        asks = file.stem.endswith("-real") or file.stem in {
+            "plan-live",
+            "triage-live",
+            "investigate-live",
+            "implement-live",
+        }
+        assert len(tasks) == (1 if asks else 0)
 
 
 def test_manifest_has_canonical_file_order():

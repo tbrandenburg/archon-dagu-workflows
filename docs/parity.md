@@ -29,3 +29,5 @@ The source contains a stale reporting caveat saying forge review threads are not
 - `native-smoke`: actual DAGU scheduling of simple/detailed dry variants for ready, CI repair and round exhaustion. No local-harness substitution is permitted.
 
 Native engine CI is valuable evidence for orchestration, not proof of a live coding agent's judgments, GitHub behavior, crash recovery or human resume semantics. Further disposable-repository tests are required before unattended live use.
+
+The six standalone workflows have a separate [fidelity matrix](standalone.md#fidelity-matrix), fixture/live examples, and explicit retry and human-decision concessions.

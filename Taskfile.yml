@@ -2,6 +2,8 @@ version: '3'
 vars:
   VARIANT: '{{default "simple-dry" .VARIANT}}'
   CASE: '{{default "fix_ci" .CASE}}'
+  WORKFLOW: '{{default "investigate" .WORKFLOW}}'
+  STANDALONE_CASE: '{{default "happy" .STANDALONE_CASE}}'
   EXECUTOR: '{{default "local" .EXECUTOR}}'
 tasks:
   default:
@@ -11,7 +13,7 @@ tasks:
     desc: Install locked Python development dependencies
     cmds: [uv sync --frozen]
   tools:
-    desc: Install checksum-verified DAGU 2.24.0 and Task 3.54.0 locally
+    desc: Install checksum-verified DAGU 2.24.0, Task 3.54.0 and Bun 1.4.4 locally
     cmds: [uv run python scripts/install_tools.py]
   generate:
     desc: Regenerate portable workflows, prompts and command configuration
@@ -56,11 +58,26 @@ tasks:
       - task: test
       - task: parity
       - task: scenarios
+      - task: standalone-scenarios
   ci-native:
     desc: Run native DAGU checks (requires installed DAGU and Unix sockets)
     cmds:
       - task: validate
       - task: native-smoke
+      - task: standalone-native
   clean:
     desc: Remove generated run artifacts only
     cmds: [uv run python scripts/project.py clean]
+
+  standalone-demo:
+    desc: Run a standalone fixture (WORKFLOW, STANDALONE_CASE, EXECUTOR)
+    cmds:
+      - uv run python scripts/standalone.py demo --workflow '{{.WORKFLOW}}' --case '{{.STANDALONE_CASE}}' --executor '{{.EXECUTOR}}'
+  standalone-scenarios:
+    desc: Execute all standalone fixture cases locally
+    cmds: [uv run python scripts/standalone.py scenarios]
+  standalone-native:
+    desc: Preview all twelve standalone DAGs and execute every fixture in native DAGU
+    cmds:
+      - uv run python scripts/standalone.py validate
+      - uv run python scripts/standalone.py scenarios --executor dagu

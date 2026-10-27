@@ -3,7 +3,9 @@ UV ?= uv
 VARIANT ?= simple-dry
 CASE ?= fix_ci
 EXECUTOR ?= local
-.PHONY: help setup tools generate format lint source-check generated-check test parity scenarios validate demo native-smoke ci ci-native clean
+WORKFLOW ?= investigate
+STANDALONE_CASE ?= happy
+.PHONY: standalone-demo standalone-scenarios standalone-native help setup tools generate format lint source-check generated-check test parity scenarios validate demo native-smoke ci ci-native clean
 help: ## List common commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 setup: ## Install locked Python dependencies
@@ -34,7 +36,15 @@ demo: ## Run an offline example (VARIANT, CASE, EXECUTOR)
 	$(UV) run python scripts/project.py demo --variant '$(VARIANT)' --case '$(CASE)' --executor '$(EXECUTOR)'
 native-smoke: ## Run six actual DAGU fixture executions
 	$(UV) run python scripts/project.py native-smoke
-ci: lint source-check generated-check test parity scenarios ## Run credential-free checks
-ci-native: validate native-smoke ## Run native engine checks
+ci: lint source-check generated-check test parity scenarios standalone-scenarios ## Run credential-free checks
+ci-native: validate native-smoke standalone-native ## Run native engine checks
 clean: ## Remove run artifacts only
 	$(UV) run python scripts/project.py clean
+
+standalone-demo: ## Run standalone fixture (WORKFLOW, STANDALONE_CASE, EXECUTOR)
+	$(UV) run python scripts/standalone.py demo --workflow '$(WORKFLOW)' --case '$(STANDALONE_CASE)' --executor '$(EXECUTOR)'
+standalone-scenarios: ## Execute all standalone fixtures locally
+	$(UV) run python scripts/standalone.py scenarios
+standalone-native: ## Execute all standalone fixtures through actual DAGU
+	$(UV) run python scripts/standalone.py validate
+	$(UV) run python scripts/standalone.py scenarios --executor dagu
