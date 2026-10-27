@@ -169,6 +169,7 @@ if sys.argv[2]=='mutate': pathlib.Path('code.txt').write_text('changed')
 print(json.dumps(value))
 """)
     config = json.loads(node_config.read_text())
+    config["agent_requires"] = []  # This controlled transport does not use OpenCode.
     config["agent_argv"] = [
         sys.executable,
         str(stub),

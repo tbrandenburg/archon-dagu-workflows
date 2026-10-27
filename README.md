@@ -95,6 +95,8 @@ Both entrypoints call the same Python command implementations. Workflow YAML use
 
 The live files can commit, push, publish PRs/comments and change draft status. They never merge. They require Bun, authenticated Archon/gh, a configured agent CLI, accepted work, and an explicitly isolated target checkout. No live workflow runs in CI.
 
+OpenCode is the default agent for every live workflow. The included adapter extracts its final assistant answer from JSON events. Install/authenticate OpenCode and choose its model before running live workflows; see [agent configuration](docs/agents.md).
+
 Copy `config/commands.json` to `config/commands.local.json` to customize the agent argv and installed-tool requirements. Private local config is ignored by Git. The agent must return the requested JSON object, not a provider envelope. No permission-bypass flags are added.
 
 ```bash

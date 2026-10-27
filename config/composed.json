@@ -1,12 +1,16 @@
 {
   "agent_argv": [
-    "claude",
-    "--print"
+    "python",
+    "-m",
+    "archon_dagu.opencode"
   ],
   "script_argv": [
     "bun"
   ],
   "agent_timeout_seconds": 3600,
   "description": "Experimental source-backed review/publication/ship/upkeep and approved issue replies; no merge. Agent stdout must match source contracts. Optional delivery settings override config/commands.json.",
-  "delivery_timeout_seconds": 86400
+  "delivery_timeout_seconds": 86400,
+  "agent_requires": [
+    "opencode"
+  ]
 }
