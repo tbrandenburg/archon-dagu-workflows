@@ -1,0 +1,75 @@
+type: graph
+description: Archon implement; fixture transport. See docs/standalone.md.
+working_dir: ${params.project_dir}
+params:
+- name: project_dir
+  type: string
+- name: state_dir
+  type: string
+- name: repo
+  type: string
+  default: ''
+- name: input
+  type: string
+  default: Describe the work
+- name: scope
+  type: string
+  default: ''
+- name: prior_report
+  type: string
+  default: ''
+- name: related
+  type: string
+  default: '[]'
+- name: publish
+  type: string
+  default: 'false'
+- name: fixture
+  type: string
+  default: examples/standalone/implement-happy.json
+- name: config
+  type: string
+  default: config/standalone.json
+env:
+  STANDALONE_WORKFLOW: implement
+  STANDALONE_MODE: fixture
+  STATE_DIR: ${params.state_dir}
+  TARGET_REPO: ${params.repo}
+  WORK_INPUT: ${params.input}
+  SCOPE: ${params.scope}
+  PRIOR_REPORT: ${params.prior_report}
+  RELATED: ${params.related}
+  PUBLISH: ${params.publish}
+  STANDALONE_FIXTURE: ${params.fixture}
+  STANDALONE_CONFIG: ${params.config}
+handler_on:
+  failure:
+    run: python -m archon_dagu.standalone failure
+steps:
+- id: setup
+  run: python -m archon_dagu.standalone init
+- id: implement_1
+  depends:
+  - setup
+  run: python -m archon_dagu.standalone stage implement_1
+- id: implement_2
+  depends:
+  - implement_1
+  run: python -m archon_dagu.standalone stage implement_2
+- id: implement_3
+  depends:
+  - implement_2
+  run: python -m archon_dagu.standalone stage implement_3
+- id: implement_4
+  depends:
+  - implement_3
+  run: python -m archon_dagu.standalone stage implement_4
+- id: implement_5
+  depends:
+  - implement_4
+  run: python -m archon_dagu.standalone stage implement_5
+- id: report
+  depends:
+  - implement_5
+  run: python -m archon_dagu.standalone report
+  output: NEEDS_DECISION

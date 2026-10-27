@@ -32,12 +32,14 @@ jobs:
           node-version: '24'
       - name: Install locked environment
         run: uv sync --frozen --python "${{ matrix.python }}"
+      - name: Install checksum-verified tools and original script runtime
+        run: make tools
       - name: Quality and source integrity
         run: make lint source-check generated-check
       - name: Contracts and upstream parity
         run: make test parity
       - name: Four-variant local command scenarios
-        run: make scenarios
+        run: make scenarios standalone-scenarios
       - name: Upload fixture evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -46,6 +48,7 @@ jobs:
           path: |
             .runs/cases.json
             .runs/reducer-parity.json
+            .runs/standalone-local.json
           include-hidden-files: true
           if-no-files-found: ignore
 
@@ -80,5 +83,8 @@ jobs:
             .runs/examples/**/report.json
             .runs/examples/**/attention.json
             .runs/dagu/logs/**
+            .runs/standalone-dagu.json
+            .runs/standalone/**/report.json
+            .runs/standalone/**/dagu.log
           include-hidden-files: true
           if-no-files-found: ignore

@@ -1,4 +1,4 @@
-# Archon delivery workflows for DAGU
+# Archon workflows for DAGU
 
 [![CI](https://github.com/tbrandenburg/archon-dagu-workflows/actions/workflows/ci.yml/badge.svg)](https://github.com/tbrandenburg/archon-dagu-workflows/actions/workflows/ci.yml)
 
@@ -17,6 +17,17 @@ Delivery starts after the work has been decided. It does not triage issues, deci
 
 The original prompts and 186 upstream source files are pinned to Archon commit `72817c50dc51bb91773f71e5448bb7d387bfc8dd`. Live behavior is **experimental, not a proven feature-equivalent replacement for Archon**. Read [parity and limitations](docs/parity.md) before a disposable-repository trial.
 
+## Standalone developer workflows
+
+The repository also ports **validate, investigate, plan, triage, implement, and maintainer standup**, each with a fixture and live entrypoint. See [standalone workflows, prompts, examples, and fidelity](docs/standalone.md). These standalone tools complement the four delivery variants above.
+
+```bash
+make tools
+make standalone-demo WORKFLOW=investigate
+make standalone-demo WORKFLOW=triage STANDALONE_CASE=blocked
+make standalone-native
+```
+
 ## Quick start
 
 Requirements: [uv](https://docs.astral.sh/uv/), Python 3.12+, and Node.js 24. Task is optional; Make exposes the same targets. Linux/macOS are supported by the tool installer; use WSL on Windows.
@@ -33,7 +44,7 @@ The local demo executes the workflow's real shell commands and dependencies thro
 To run the examples with the actual engine:
 
 ```bash
-make tools                        # checksum-verified DAGU 2.24.0 + Task 3.54.0
+make tools                        # checksum-verified DAGU 2.24.0 + Task 3.54.0 + Bun 1.4.4
 make validate                     # native validation + four dry previews
 make demo VARIANT=detailed-dry EXECUTOR=dagu
 make native-smoke                 # six real engine runs, all external effects fake
@@ -62,6 +73,8 @@ Native `dagu dry` only previews a workflow; fixture execution through `dagu star
 | `scenarios` | 104 local command scenarios across all four variants; live effects mocked |
 | `validate`, `native-smoke` | Native DAGU previews / real scheduling of six fixture scenarios |
 | `demo` | Select `VARIANT`, `CASE`, and `EXECUTOR=local` or `dagu` |
+| `standalone-demo` | Select `WORKFLOW`, `STANDALONE_CASE`, and `EXECUTOR` |
+| `standalone-scenarios`, `standalone-native` | All 36 standalone fixtures locally / native previews and execution |
 | `ci`, `ci-native` | Credential-free quality suite / native engine suite |
 | `clean` | Remove `.runs/` only |
 

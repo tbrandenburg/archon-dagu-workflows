@@ -9,7 +9,10 @@ description = "Source-backed Archon delivery workflows for DAGU, with offline re
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
-dependencies = ["PyYAML>=6.0.3,<7"]
+dependencies = [
+    "jsonschema>=4.26,<5",
+    "PyYAML>=6.0.3,<7",
+]
 
 [dependency-groups]
 dev = ["pytest>=8.4,<10", "ruff>=0.14,<1"]

@@ -1,0 +1,7 @@
+{
+  "agent_argv": ["claude", "--print"],
+  "script_argv": ["bun"],
+  "agent_timeout_seconds": 3600,
+  "standup_in_place": false,
+  "description": "Experimental live transport. Agent reads prompt on stdin and returns the source output directly on stdout (JSON for SDLC, raw brief/state text for standup). Standup must explicitly opt into in-place git fetch/pull and local state writes."
+}

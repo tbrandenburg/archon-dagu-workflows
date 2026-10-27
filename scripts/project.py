@@ -26,13 +26,23 @@ def source_check():
         actual = hashlib.sha256((SOURCE / path).read_bytes()).hexdigest()
         if actual != expected:
             raise SystemExit(f"Pinned upstream source changed: {path}")
+    extra = json.loads((BASE / "STANDALONE_SOURCE.json").read_text())
+    for path, expected in extra["extra_hashes"].items():
+        actual = hashlib.sha256((BASE / "vendor/archon" / path).read_bytes()).hexdigest()
+        if actual != expected:
+            raise SystemExit("Pinned standalone source changed: " + path)
     print(f"Verified {len(manifest['hashes'])} pinned upstream files")
 
 
 def generated_check():
-    paths = [BASE / "SOURCE.json", BASE / "schemas.json", BASE / "config/commands.json"]
+    paths = [
+        BASE / "SOURCE.json",
+        BASE / "STANDALONE_SOURCE.json",
+        BASE / "schemas.json",
+        BASE / "config/commands.json",
+    ]
     for folder, suffix in [("workflows", "*.yaml"), ("prompts", "*.md")]:
-        paths.extend(sorted((BASE / folder).glob(suffix)))
+        paths.extend(sorted((BASE / folder).rglob(suffix)))
     before = {p: p.read_bytes() for p in paths}
     command(sys.executable, "scripts/generate.py")
     changed = [str(p.relative_to(BASE)) for p in paths if p.read_bytes() != before[p]]
@@ -133,6 +143,12 @@ def main():
         case "demo":
             example(args.variant, args.case, args.executor)
         case "clean":
+            worktrees = [p.parent for p in (BASE / ".runs").rglob(".git") if p.is_file()]
+            if worktrees:
+                raise SystemExit(
+                    "Refusing to delete registered Git worktrees; remove them with git worktree remove first: "
+                    + ", ".join(map(str, worktrees))
+                )
             shutil.rmtree(BASE / ".runs", ignore_errors=True)
 
 

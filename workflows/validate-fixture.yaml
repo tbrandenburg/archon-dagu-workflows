@@ -1,0 +1,73 @@
+type: graph
+description: Archon validate; fixture transport. See docs/standalone.md.
+working_dir: ${params.project_dir}
+params:
+- name: project_dir
+  type: string
+- name: state_dir
+  type: string
+- name: repo
+  type: string
+  default: ''
+- name: input
+  type: string
+  default: Describe the work
+- name: scope
+  type: string
+  default: ''
+- name: prior_report
+  type: string
+  default: ''
+- name: related
+  type: string
+  default: '[]'
+- name: publish
+  type: string
+  default: 'false'
+- name: fixture
+  type: string
+  default: examples/standalone/validate-happy.json
+- name: config
+  type: string
+  default: config/standalone.json
+env:
+  STANDALONE_WORKFLOW: validate
+  STANDALONE_MODE: fixture
+  STATE_DIR: ${params.state_dir}
+  TARGET_REPO: ${params.repo}
+  WORK_INPUT: ${params.input}
+  SCOPE: ${params.scope}
+  PRIOR_REPORT: ${params.prior_report}
+  RELATED: ${params.related}
+  PUBLISH: ${params.publish}
+  STANDALONE_FIXTURE: ${params.fixture}
+  STANDALONE_CONFIG: ${params.config}
+handler_on:
+  failure:
+    run: python -m archon_dagu.standalone failure
+steps:
+- id: setup
+  run: python -m archon_dagu.standalone init
+- id: discover
+  depends:
+  - setup
+  run: python -m archon_dagu.standalone stage discover
+- id: run
+  depends:
+  - discover
+  run: python -m archon_dagu.standalone stage run
+- id: classify
+  depends:
+  - run
+  run: python -m archon_dagu.standalone stage classify
+- id: result
+  depends:
+  - discover
+  - run
+  - classify
+  run: python -m archon_dagu.standalone stage result
+- id: report
+  depends:
+  - result
+  run: python -m archon_dagu.standalone report
+  output: NEEDS_DECISION

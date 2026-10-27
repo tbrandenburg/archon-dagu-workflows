@@ -1,0 +1,13 @@
+{
+  "workflow": "validate",
+  "agents": {
+    "discover": {
+      "checks": [],
+      "notes": "Local fixture checks, no external services."
+    }
+  },
+  "expected": {
+    "green": true,
+    "reason": "completed"
+  }
+}

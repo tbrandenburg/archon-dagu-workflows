@@ -1,0 +1,26 @@
+{
+  "workflow": "standup",
+  "agents": {
+    "synthesize": "No state markers here."
+  },
+  "facts": {
+    "git-status": {
+      "current_dev_sha": "fixture-head",
+      "prior_dev_sha": "",
+      "pull_status": "fetch_only",
+      "new_commits": "fixture change"
+    },
+    "gh-data": {
+      "open_prs": [
+        {
+          "number": 42,
+          "title": "Fixture PR"
+        }
+      ],
+      "assigned_issues": []
+    }
+  },
+  "expected": {
+    "failure": true
+  }
+}

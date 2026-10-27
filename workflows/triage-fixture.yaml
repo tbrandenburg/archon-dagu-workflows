@@ -1,0 +1,67 @@
+type: graph
+description: Archon triage; fixture transport. See docs/standalone.md.
+working_dir: ${params.project_dir}
+params:
+- name: project_dir
+  type: string
+- name: state_dir
+  type: string
+- name: repo
+  type: string
+  default: ''
+- name: input
+  type: string
+  default: Describe the work
+- name: scope
+  type: string
+  default: ''
+- name: prior_report
+  type: string
+  default: ''
+- name: related
+  type: string
+  default: '[]'
+- name: publish
+  type: string
+  default: 'false'
+- name: fixture
+  type: string
+  default: examples/standalone/triage-happy.json
+- name: config
+  type: string
+  default: config/standalone.json
+env:
+  STANDALONE_WORKFLOW: triage
+  STANDALONE_MODE: fixture
+  STATE_DIR: ${params.state_dir}
+  TARGET_REPO: ${params.repo}
+  WORK_INPUT: ${params.input}
+  SCOPE: ${params.scope}
+  PRIOR_REPORT: ${params.prior_report}
+  RELATED: ${params.related}
+  PUBLISH: ${params.publish}
+  STANDALONE_FIXTURE: ${params.fixture}
+  STANDALONE_CONFIG: ${params.config}
+handler_on:
+  failure:
+    run: python -m archon_dagu.standalone failure
+steps:
+- id: setup
+  run: python -m archon_dagu.standalone init
+- id: policy
+  depends:
+  - setup
+  run: python -m archon_dagu.standalone stage policy
+- id: triage
+  depends:
+  - policy
+  run: python -m archon_dagu.standalone stage triage
+- id: verdict
+  depends:
+  - triage
+  run: python -m archon_dagu.standalone stage verdict
+- id: report
+  depends:
+  - verdict
+  run: python -m archon_dagu.standalone report
+  output: NEEDS_DECISION
