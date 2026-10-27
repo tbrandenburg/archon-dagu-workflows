@@ -1,0 +1,9 @@
+{
+  "rounds": [
+    {
+      "ci": {
+        "state": "pr_caused"
+      }
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+type: graph
+working_dir: ${params.project_dir}
+description: 'Archon delivery: simple orchestration, dry effects; never merges.'
+params:
+- name: project_dir
+  type: string
+- name: state_dir
+  type: string
+- name: repo
+  type: string
+  default: ''
+- name: fixture
+  type: string
+  default: examples/fixtures/ready.json
+- name: commands
+  type: string
+  default: config/commands.json
+- name: work
+  type: string
+  default: ''
+- name: pull_request
+  type: string
+  default: ''
+- name: branch
+  type: string
+  default: ''
+- name: part
+  type: string
+  default: ''
+- name: errors
+  type: string
+  default: auto
+env:
+  PORT_MODE: dry
+  STATE_DIR: ${params.state_dir}
+  TARGET_REPO: ${params.repo}
+  FIXTURE: ${params.fixture}
+  STAGE_COMMANDS: ${params.commands}
+  WORK: ${params.work}
+  PULL_REQUEST: ${params.pull_request}
+  BRANCH: ${params.branch}
+  PART: ${params.part}
+  ERRORS: ${params.errors}
+handler_on:
+  failure:
+    run: python -m archon_dagu.engine failure
+steps:
+- id: check_setup
+  run: python -m archon_dagu.engine preflight
+- id: start_batch
+  depends:
+  - check_setup
+  run: python -m archon_dagu.engine init
+- id: fix_review_check_loop
+  depends:
+  - start_batch
+  run: python -m archon_dagu.engine batch
+- id: update_description_and_report
+  depends:
+  - fix_review_check_loop
+  run: python -m archon_dagu.engine finalize
+- id: read_ready_flag
+  depends:
+  - update_description_and_report
+  run: python -m archon_dagu.engine ready
+  output: READY
+- id: simulate_attention
+  depends:
+  - read_ready_flag
+  run: python -m archon_dagu.engine attention

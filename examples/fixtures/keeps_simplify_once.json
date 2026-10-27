@@ -1,0 +1,17 @@
+{
+  "rounds": [
+    {
+      "simplify": {
+        "findings": true
+      },
+      "ci": {
+        "state": "pr_caused"
+      }
+    },
+    {
+      "simplify": {
+        "findings": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "description": "Experimental live integration: pinned Archon scripts and configured fresh agent CLI; no merge",
+  "requires": [
+    "bun",
+    "archon",
+    "gh",
+    "claude"
+  ],
+  "agent_argv": [
+    "claude",
+    "--print"
+  ],
+  "archon_argv": [
+    "archon"
+  ],
+  "commands": {
+    "forge": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "implement": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "pr": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "scope": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "route": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "seams": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "code": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "tests": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "errors": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "docs": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "review": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "publish-review": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "simplify": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "reshape": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "rereview": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "publish-rereview": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "settle-threads": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "ci": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "threads": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ],
+    "update-pr-body": [
+      "python",
+      "-m",
+      "archon_dagu.live_stage"
+    ]
+  }
+}

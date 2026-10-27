@@ -1,0 +1,10 @@
+{
+  "rounds": [
+    {
+      "review": {
+        "ready": false,
+        "action": "ask"
+      }
+    }
+  ]
+}

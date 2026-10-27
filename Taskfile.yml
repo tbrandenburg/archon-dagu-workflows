@@ -1,0 +1,66 @@
+version: '3'
+vars:
+  VARIANT: '{{default "simple-dry" .VARIANT}}'
+  CASE: '{{default "fix_ci" .CASE}}'
+  EXECUTOR: '{{default "local" .EXECUTOR}}'
+tasks:
+  default:
+    desc: List available developer commands
+    cmds: ["'{{.TASK_EXE}}' --list"]
+  setup:
+    desc: Install locked Python development dependencies
+    cmds: [uv sync --frozen]
+  tools:
+    desc: Install checksum-verified DAGU 2.24.0 and Task 3.54.0 locally
+    cmds: [uv run python scripts/install_tools.py]
+  generate:
+    desc: Regenerate portable workflows, prompts and command configuration
+    cmds: [uv run python scripts/generate.py]
+  format:
+    desc: Format first-party Python
+    cmds: [uv run ruff check --fix src scripts tests, uv run ruff format src scripts tests]
+  lint:
+    desc: Check Python style and formatting
+    cmds: [uv run ruff check src scripts tests, uv run ruff format --check src scripts tests]
+  source-check:
+    desc: Verify pinned upstream source hashes
+    cmds: [uv run python scripts/project.py source-check]
+  generated-check:
+    desc: Verify generated files are current and portable
+    cmds: [uv run python scripts/project.py generated-check]
+  test:
+    desc: Run fast contract and safety tests
+    cmds: [uv run pytest]
+  parity:
+    desc: Compare 4096 decisions with original Archon code
+    cmds: [uv run python scripts/check_reducer.py]
+  scenarios:
+    desc: Run 104 local YAML-command scenarios (external effects mocked)
+    cmds: [uv run python scripts/check_scenarios.py]
+  validate:
+    desc: Native DAGU validation and dry previews for all four variants
+    cmds: [uv run python scripts/project.py validate]
+  demo:
+    desc: Run an offline example; VARIANT/CASE/EXECUTOR select the scenario
+    cmds:
+      - uv run python scripts/project.py demo --variant '{{.VARIANT}}' --case '{{.CASE}}' --executor '{{.EXECUTOR}}'
+  native-smoke:
+    desc: Execute six fixture scenarios in the actual DAGU engine
+    cmds: [uv run python scripts/project.py native-smoke]
+  ci:
+    desc: Run credential-free quality, contract, parity and integration checks
+    cmds:
+      - task: lint
+      - task: source-check
+      - task: generated-check
+      - task: test
+      - task: parity
+      - task: scenarios
+  ci-native:
+    desc: Run native DAGU checks (requires installed DAGU and Unix sockets)
+    cmds:
+      - task: validate
+      - task: native-smoke
+  clean:
+    desc: Remove generated run artifacts only
+    cmds: [uv run python scripts/project.py clean]

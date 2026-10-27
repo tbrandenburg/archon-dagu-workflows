@@ -1,0 +1,10 @@
+{
+  "rounds": [
+    {
+      "implement": {
+        "green": false,
+        "red_cause": "environment"
+      }
+    }
+  ]
+}

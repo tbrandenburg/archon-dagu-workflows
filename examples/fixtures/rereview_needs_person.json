@@ -1,0 +1,13 @@
+{
+  "rounds": [
+    {
+      "simplify": {
+        "findings": true
+      },
+      "rereview": {
+        "ready": false,
+        "action": "ask"
+      }
+    }
+  ]
+}

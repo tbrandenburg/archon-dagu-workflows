@@ -1,0 +1,380 @@
+{
+  "implement": {
+    "type": "object",
+    "properties": {
+      "done": {
+        "type": "boolean"
+      },
+      "green": {
+        "type": "boolean"
+      },
+      "red_cause": {
+        "type": "string",
+        "enum": [
+          "introduced",
+          "inherited",
+          "environment",
+          "incomplete",
+          ""
+        ]
+      },
+      "summary": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "done",
+      "green",
+      "red_cause",
+      "summary"
+    ]
+  },
+  "pr": {
+    "type": "object",
+    "properties": {
+      "schemaVersion": {
+        "type": "integer",
+        "enum": [
+          1
+        ]
+      },
+      "repo": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "host",
+          "path"
+        ]
+      },
+      "number": {
+        "type": "integer"
+      },
+      "url": {
+        "type": "string"
+      },
+      "head": {
+        "type": "string"
+      },
+      "base": {
+        "type": "string"
+      },
+      "is_draft": {
+        "type": "boolean"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "open",
+          "closed",
+          "merged"
+        ]
+      },
+      "head_repo": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "host",
+          "path"
+        ]
+      },
+      "head_revision": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "base_revision": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "maintainer_can_modify": {
+        "type": [
+          "boolean",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "schemaVersion",
+      "repo",
+      "number",
+      "url",
+      "head",
+      "base",
+      "is_draft",
+      "state",
+      "head_repo",
+      "head_revision",
+      "base_revision",
+      "maintainer_can_modify"
+    ]
+  },
+  "review": {
+    "type": "object",
+    "properties": {
+      "ready": {
+        "type": "boolean"
+      },
+      "action": {
+        "type": "string",
+        "enum": [
+          "none",
+          "correct",
+          "replan",
+          "ask"
+        ]
+      },
+      "findings_summary": {
+        "type": "string"
+      },
+      "report": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "archon_artifact"
+            ]
+          },
+          "run_id": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string",
+            "enum": [
+              "review/report.md",
+              "review/scope.md"
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "run_id",
+          "path"
+        ]
+      },
+      "discoveries": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "pattern": "\\S"
+            },
+            "claim": {
+              "type": "string",
+              "pattern": "\\S"
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "relation": {
+              "type": "string",
+              "enum": [
+                "unrelated",
+                "scope_conflict",
+                "note"
+              ]
+            },
+            "source_nodes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "title",
+            "claim",
+            "evidence",
+            "relation",
+            "source_nodes"
+          ]
+        }
+      },
+      "contract_left": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "\\S"
+        }
+      }
+    },
+    "required": [
+      "ready",
+      "action",
+      "findings_summary",
+      "report",
+      "discoveries",
+      "contract_left"
+    ]
+  },
+  "simplify": {
+    "type": "object",
+    "properties": {
+      "findings": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "findings"
+    ]
+  },
+  "settle-threads": {
+    "type": "object",
+    "properties": {
+      "answers": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "thread": {
+              "type": "string",
+              "pattern": "\\S"
+            },
+            "reply": {
+              "type": "string",
+              "pattern": "\\S"
+            }
+          },
+          "required": [
+            "thread",
+            "reply"
+          ]
+        }
+      },
+      "ask": {
+        "type": "boolean"
+      },
+      "summary": {
+        "type": "string",
+        "pattern": "\\S"
+      }
+    },
+    "required": [
+      "answers",
+      "ask",
+      "summary"
+    ]
+  },
+  "ci": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "type": "string",
+        "enum": [
+          "green",
+          "pr_caused",
+          "other"
+        ]
+      },
+      "rerun": {
+        "type": "string",
+        "enum": [
+          "none",
+          "green",
+          "red"
+        ]
+      },
+      "summary": {
+        "type": "string",
+        "pattern": "\\S"
+      }
+    },
+    "required": [
+      "state",
+      "rerun",
+      "summary"
+    ]
+  },
+  "threads": {
+    "type": "object",
+    "properties": {
+      "open": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "summary": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "open",
+      "summary"
+    ]
+  },
+  "round": {
+    "type": "object",
+    "properties": {
+      "round": {
+        "type": "integer"
+      },
+      "done": {
+        "type": "boolean"
+      },
+      "ready": {
+        "type": "boolean"
+      },
+      "reason": {
+        "type": "string"
+      },
+      "pr_url": {
+        "type": "string"
+      },
+      "prior_report": {
+        "type": "string"
+      },
+      "light_review": {
+        "type": "boolean"
+      },
+      "contract_left": {
+        "type": [
+          "array",
+          "null"
+        ],
+        "items": {
+          "type": "string"
+        }
+      },
+      "summary": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "round",
+      "done",
+      "ready",
+      "reason",
+      "pr_url",
+      "prior_report",
+      "light_review",
+      "contract_left",
+      "summary"
+    ]
+  }
+}

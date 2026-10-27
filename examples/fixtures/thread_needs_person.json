@@ -1,0 +1,17 @@
+{
+  "rounds": [
+    {
+      "threads": {
+        "open": 1
+      }
+    },
+    {
+      "settle-threads": {
+        "ask": true
+      },
+      "threads": {
+        "open": 1
+      }
+    }
+  ]
+}
