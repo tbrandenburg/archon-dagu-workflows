@@ -102,7 +102,7 @@ def generate():
                     ("project_dir", None),
                     ("state_dir", None),
                     ("repo", ""),
-                    ("input", "Describe the work"),
+                    ("input", ""),
                     ("scope", ""),
                     ("prior_report", ""),
                     ("related", "[]"),

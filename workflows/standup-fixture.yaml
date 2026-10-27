@@ -11,7 +11,7 @@ params:
   default: ''
 - name: input
   type: string
-  default: Describe the work
+  default: ''
 - name: scope
   type: string
   default: ''

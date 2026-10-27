@@ -81,6 +81,10 @@ def forward_cancellation(proc):
             except ProcessLookupError:
                 pass
             proc.wait()
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
         raise SystemExit(128 + signum)
 
     previous = {sig: signal.signal(sig, stop) for sig in (signal.SIGTERM, signal.SIGINT)}
@@ -154,6 +158,7 @@ class Run:
                 for k, v in self.env.items()
                 if not re.search(r"TOKEN|SECRET|PASSWORD|API_KEY|CREDENTIAL", k, re.I)
             }
+        self.env.setdefault("ARCHON_SDLC_FORGE", "gh")
         self.env["ARCHON_CLI_COMMAND"] = json.dumps(self.config.get("archon_argv", ["archon"]))
         self.env["ARCHON_RUN_ENV_KEYS"] = json.dumps(
             [k for k in self.env if k.startswith(("INPUTS_", "STANDALONE_"))]
@@ -495,6 +500,13 @@ def initialize(root, environ=None):
         repo = pathlib.Path(env.get("TARGET_REPO", "")).resolve()
         claim = None
         if mode == "live":
+            if (
+                name in ("investigate", "plan", "triage", "implement")
+                and not inputs["work"].strip()
+            ):
+                raise ValueError(
+                    "Live workflow requires explicit input; no Archon trigger message is available"
+                )
             if not env.get("TARGET_REPO"):
                 raise ValueError("Live runs require an explicit repo path")
             git(repo, "rev-parse", "--show-toplevel")

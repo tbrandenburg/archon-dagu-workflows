@@ -382,3 +382,18 @@ while True: time.sleep(.1)
         if wrapper.poll() is None:
             wrapper.kill()
             wrapper.wait()
+
+
+def test_live_work_cannot_start_from_missing_request(tmp_path, node_config):
+    _, source = live_run(tmp_path, node_config, "investigate")
+    with pytest.raises(ValueError, match="explicit input"):
+        initialize(
+            tmp_path / "missing-request",
+            {
+                "STANDALONE_WORKFLOW": "implement",
+                "STANDALONE_MODE": "live",
+                "STANDALONE_CONFIG": str(node_config),
+                "TARGET_REPO": str(source),
+            },
+        )
+    assert not (tmp_path / "missing-request/checkout").exists()

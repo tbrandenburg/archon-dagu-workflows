@@ -83,6 +83,8 @@ uv run .tools/bin/dagu start workflows/implement-live.yaml -- \
   config="config/standalone.local.json"
 ```
 
+Live investigation, planning, triage, and implementation require a nonempty `input`: DAGU has no Archon trigger message to supply an omitted request.
+
 For validation, pass `scope=package-or-check-name` when narrowing is wanted. For planning, `prior_report` should be an absolute report path and `related` is a JSON list of `{url, relation}`. Triage defaults to `publish=false`; explicitly setting `publish=true` lets the original verdict script verify the issue identity, apply label deltas, and read them back through the selected `gh`/Archon forge source. Triage does not close the issue or start delivery.
 
 Live SDLC workflows create a Git worktree from the target's current HEAD. Investigation, plan, triage, and validation use detached worktrees. Implementation gets a new `dagu/implement-<run-directory-name>` branch; it can commit but does not create a PR. The original checkout must be clean so uncommitted work is never silently omitted. Configure the agent's execution policy for the privileges it needs. A worktree contains edits; it is not a security boundary preventing a CLI from writing elsewhere or using its credentials.
