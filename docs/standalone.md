@@ -105,6 +105,8 @@ uv run .tools/bin/dagu start workflows/standup-live.yaml -- \
 
 ## Retry, questions, and cleanup
 
+Cancellation is forwarded from the Python step to the running command process group. The original validation runner also stops its check process tree on termination. A cancelled/interrupted attempt remains journaled for reconciliation.
+
 Every stage has an atomic output receipt and a started journal entry. Retrying a successful step reuses and revalidates its receipt, rather than repeating agent or forge effects. Reusing a state directory with different inputs/config is refused. A started stage without a certified result is ambiguous: the process may have committed, written labels, or persisted part of standup state. The port stops instead of replaying it. Inspect the stage's effects, then start a fresh run, or explicitly reconcile and clear the affected journal entry and failure report before a deliberate retry. Do not blindly remove those files.
 
 A live blocked investigate/plan/triage/implement run reaches a root `human.task` with a required ruling. The original result stays in `report.json`. Completing that task records the ruling; it does not edit inputs or rerun work. Start a new run with the ruling included in `input`. This is a concession from Archon's richer attention/recommendation continuation, not feature parity. The stage graphs contain no child human tasks.

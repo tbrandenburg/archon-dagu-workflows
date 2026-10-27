@@ -340,3 +340,45 @@ def test_no_action_is_a_valid_end_without_requesting_a_decision(tmp_path, node_c
     run, _ = start(tmp_path, node_config, "triage", "no-action")
     report = execute(run)
     assert not report["outcome"] and not report["needs_decision"]
+
+
+def test_cancelling_step_forwards_signal_to_command(tmp_path):
+    import signal
+    import subprocess
+    import time
+
+    child = tmp_path / "child.py"
+    ready, stopped = tmp_path / "ready", tmp_path / "stopped"
+    child.write_text("""import pathlib,signal,time,sys
+ready,stopped=map(pathlib.Path,sys.argv[1:])
+def stop(*_):
+ stopped.write_text('stopped')
+ raise SystemExit(0)
+signal.signal(signal.SIGTERM,stop)
+ready.write_text('ready')
+while True: time.sleep(.1)
+""")
+    wrapper = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            "import os,sys; from archon_dagu.standalone import invoke; invoke(sys.argv[1:],os.getcwd(),os.environ)",
+            sys.executable,
+            str(child),
+            str(ready),
+            str(stopped),
+        ],
+        cwd=BASE,
+    )
+    try:
+        deadline = time.monotonic() + 5
+        while not ready.exists() and time.monotonic() < deadline:
+            time.sleep(0.01)
+        assert ready.exists(), "controlled command did not start"
+        wrapper.send_signal(signal.SIGTERM)
+        assert wrapper.wait(timeout=5) == 128 + signal.SIGTERM
+        assert stopped.read_text() == "stopped"
+    finally:
+        if wrapper.poll() is None:
+            wrapper.kill()
+            wrapper.wait()

@@ -64,6 +64,33 @@ def snapshot(repo):
     return digest([head, git(repo, "status", "--porcelain=v1", "--untracked-files=all"), files])
 
 
+@contextlib.contextmanager
+def forward_cancellation(proc):
+    """DAGU signals the Python step; forward cancellation to its detached command."""
+
+    def stop(signum, _frame):
+        try:
+            os.killpg(proc.pid, signum)
+        except ProcessLookupError:
+            pass
+        try:
+            proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            proc.wait()
+        raise SystemExit(128 + signum)
+
+    previous = {sig: signal.signal(sig, stop) for sig in (signal.SIGTERM, signal.SIGINT)}
+    try:
+        yield
+    finally:
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
+
+
 def invoke(argv, cwd, env, stdin="", timeout=3600):
     """Stop a complete process group; upstream check runner also stops its children."""
     proc = subprocess.Popen(
@@ -76,16 +103,23 @@ def invoke(argv, cwd, env, stdin="", timeout=3600):
         text=True,
         start_new_session=True,
     )
-    try:
-        stdout, stderr = proc.communicate(stdin, timeout=timeout)
-    except subprocess.TimeoutExpired:
-        os.killpg(proc.pid, signal.SIGTERM)
+    with forward_cancellation(proc):
         try:
-            proc.communicate(timeout=10)
+            stdout, stderr = proc.communicate(stdin, timeout=timeout)
         except subprocess.TimeoutExpired:
-            os.killpg(proc.pid, signal.SIGKILL)
-            proc.communicate()
-        raise TimeoutError(f"Process exceeded {timeout}s") from None
+            try:
+                os.killpg(proc.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                proc.communicate(timeout=10)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                proc.communicate()
+            raise TimeoutError(f"Process exceeded {timeout}s") from None
     if proc.returncode:
         raise RuntimeError(
             f"{pathlib.Path(argv[0]).name} failed ({proc.returncode}): {stderr[-4000:]}"
@@ -122,15 +156,19 @@ class Run:
             }
         self.env["ARCHON_CLI_COMMAND"] = json.dumps(self.config.get("archon_argv", ["archon"]))
         self.env["ARCHON_RUN_ENV_KEYS"] = json.dumps(
-            [k for k in self.env if k.startswith("INPUTS_")]
+            [k for k in self.env if k.startswith(("INPUTS_", "STANDALONE_"))]
             + [
                 "ARTIFACTS_DIR",
                 "WORKFLOW_ID",
                 "ARCHON_CLI_COMMAND",
                 "ARCHON_RUN_ENV_KEYS",
                 "STATE_DIR",
-                "STANDALONE_WORKFLOW",
-                "STANDALONE_MODE",
+                "TARGET_REPO",
+                "WORK_INPUT",
+                "SCOPE",
+                "PRIOR_REPORT",
+                "RELATED",
+                "PUBLISH",
             ]
         )
         for key, value in self.ctx["inputs"].items():
