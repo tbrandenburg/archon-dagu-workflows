@@ -31,7 +31,7 @@ for n in body:
     )
 manifest["hashes"] = {
     str(p.relative_to(S)): hashlib.sha256(p.read_bytes()).hexdigest()
-    for p in S.rglob("*")
+    for p in sorted(S.rglob("*"))
     if p.is_file()
 }
 existing = B / "SOURCE.json"
