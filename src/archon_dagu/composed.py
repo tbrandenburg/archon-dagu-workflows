@@ -252,6 +252,8 @@ class Composed(Run):
                     value = self.delivery(stage, node)
                 elif node.get("command") or node.get("prompt"):
                     value = stage.agent(node, sid)
+                    if node.get("output_format"):
+                        stage.check(value, node)
                     if self.name == "review" and sid == "synthesize":
                         gaps = [
                             lens
@@ -261,10 +263,26 @@ class Composed(Run):
                             != "succeeded"
                         ]
                         if gaps:
+                            note = (
+                                "\n\n## Incomplete review coverage\n\nSelected reviewers lack a certified completion: "
+                                + ", ".join(gaps)
+                                + ". This review is not ready.\n"
+                            )
+                            report = self.root / "review/report.md"
+                            if report.is_file():
+                                report.write_text(report.read_text() + note)
+                            history = sorted(
+                                (self.root / "review").glob("report-round-*.md"),
+                                key=lambda p: int(p.stem.rsplit("-", 1)[1]),
+                            )
+                            if history:
+                                history[-1].write_text(history[-1].read_text() + note)
                             value = {
                                 **value,
                                 "ready": False,
-                                "action": "correct",
+                                "action": value["action"]
+                                if value["action"] in ("ask", "replan")
+                                else "correct",
                                 "findings_summary": value["findings_summary"]
                                 + " Missing review coverage: "
                                 + ", ".join(gaps),

@@ -111,6 +111,7 @@ def test_failed_selected_lens_blocks_ready_and_is_not_certified(start):
     report = execute(run)
     assert not report["outcome"]
     assert "code" in report["result"]["findings_summary"]
+    assert "Incomplete review coverage" in (run.root / "review/report.md").read_text()
     assert load(run.root / "status/code.json")["status"] == "failed"
     listing = load(run.listing(""))
     assert "code" not in [r["nodeId"] for r in listing["artifactsByType"]["review-lens"]]
@@ -333,3 +334,13 @@ print(json.dumps({'ready':True,'action':'none','findings_summary':'Controlled tr
     assert "$mode.output.head" not in prompt
     assert git(run.repo, "rev-parse", "HEAD") in prompt
     assert str(run.root / "typed/root.json") in prompt
+
+
+def test_missing_lens_does_not_override_a_human_decision(start):
+    run = start("review", "ask")
+    run.ctx["fixture"]["fail"] = ["code"]
+    save(run.root / "context.json", run.ctx)
+    report = execute(run)
+    assert report["result"]["action"] == "ask"
+    assert report["needs_decision"]
+    assert "Incomplete review coverage" in (run.root / "review/report.md").read_text()
