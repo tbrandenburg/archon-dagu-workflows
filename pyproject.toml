@@ -22,7 +22,7 @@ packages = ["src/archon_dagu"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --basetemp=.runs/pytest"
+addopts = "-ra --basetemp=.pytest-tmp"
 
 [tool.ruff]
 target-version = "py312"
