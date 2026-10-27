@@ -39,6 +39,9 @@ def test_only_root_real_workflows_ask_for_human_input():
             "triage-live",
             "investigate-live",
             "implement-live",
+            "review-live",
+            "ship-live",
+            "upkeep-live",
         }
         assert len(tasks) == (1 if asks else 0)
 

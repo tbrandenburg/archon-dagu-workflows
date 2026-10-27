@@ -5,6 +5,7 @@ import pathlib
 import shlex
 
 import yaml
+from generate_composed import generate as generate_composed
 from generate_standalone import generate
 
 B = pathlib.Path(__file__).resolve().parents[1]
@@ -270,3 +271,5 @@ config = {
 (B / "config/commands.json").write_text(json.dumps(config, indent=2) + "\n")
 
 generate()
+
+generate_composed()

@@ -1,0 +1,61 @@
+{
+  "workflow": "review",
+  "agents": {
+    "scope": {
+      "head_matches": true,
+      "pr": null,
+      "report": {
+        "type": "archon_artifact",
+        "run_id": "$RUN_ID",
+        "path": "review/scope.md"
+      }
+    },
+    "route": {
+      "seams": true,
+      "code": true,
+      "tests": true,
+      "errors": false,
+      "docs": false,
+      "reason": "Fixture change engages three lenses."
+    },
+    "seams": "Fixture seam lens completed.",
+    "code": "Fixture code lens completed.",
+    "tests": "Fixture tests lens completed.",
+    "synthesize": {
+      "ready": true,
+      "action": "none",
+      "findings_summary": "Fixture review complete.",
+      "report": {
+        "type": "archon_artifact",
+        "run_id": "$RUN_ID",
+        "path": "review/report.md"
+      },
+      "discoveries": [],
+      "contract_left": []
+    }
+  },
+  "artifacts": {
+    "scope": {
+      "review/scope.md": "# Scope\nFixture contract and commit scope.\n"
+    },
+    "synthesize": {
+      "review/report.md": "# Review\nFixture coverage complete.\n",
+      "review/findings.json": "[]\n"
+    },
+    "seams": {
+      "review/seams.md": "# seams\nFixture evidence.\n"
+    },
+    "code": {
+      "review/code.md": "# code\nFixture evidence.\n"
+    },
+    "tests": {
+      "review/tests.md": "# tests\nFixture evidence.\n"
+    }
+  },
+  "expected": {
+    "failure": true
+  },
+  "fail": [
+    "synthesize"
+  ]
+}

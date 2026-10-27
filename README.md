@@ -28,6 +28,16 @@ make standalone-demo WORKFLOW=triage STANDALONE_CASE=blocked
 make standalone-native
 ```
 
+## Composed developer workflows
+
+**Review, simplify, PR publication, ship, upkeep, and approved issue responses** now have fixture/live ports. See [the stage and prompt guide, examples, and fidelity matrix](docs/composed.md).
+
+```bash
+make composed-demo
+make composed-demo COMPOSED_WORKFLOW=ship COMPOSED_CASE=plan
+make composed-native
+```
+
 ## Quick start
 
 Requirements: [uv](https://docs.astral.sh/uv/), Python 3.12+, and Node.js 24. Task is optional; Make exposes the same targets. Linux/macOS are supported by the tool installer; use WSL on Windows.
@@ -75,6 +85,7 @@ Native `dagu dry` only previews a workflow; fixture execution through `dagu star
 | `demo` | Select `VARIANT`, `CASE`, and `EXECUTOR=local` or `dagu` |
 | `standalone-demo` | Select `WORKFLOW`, `STANDALONE_CASE`, and `EXECUTOR` |
 | `standalone-scenarios`, `standalone-native` | All 36 standalone fixtures locally / native previews and execution |
+| `composed-demo`, `composed-scenarios`, `composed-native` | Issue #3 examples / all 39 cases locally / native execution |
 | `ci`, `ci-native` | Credential-free quality suite / native engine suite |
 | `clean` | Remove `.runs/` only |
 

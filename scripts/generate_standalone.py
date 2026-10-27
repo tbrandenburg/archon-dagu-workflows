@@ -141,7 +141,9 @@ def generate():
             (B / "workflows" / f"{name}-{mode}.yaml").write_text(
                 yaml.safe_dump(dag, sort_keys=False)
             )
-    extras = [p for p in (V / ".archon").rglob("*") if p.is_file() and S not in p.parents]
+    extras = [
+        V / path for path in json.loads((B / "STANDALONE_SOURCE.json").read_text())["extra_hashes"]
+    ]
     manifest = {
         "repository": "coleam00/Archon",
         "commit": json.loads((B / "SOURCE.json").read_text())["commit"],

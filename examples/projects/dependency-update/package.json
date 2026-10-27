@@ -1,0 +1,7 @@
+{
+  "name": "archon-upkeep-offline-example",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {"test": "node test.cjs"},
+  "dependencies": {"fixture-calc": "file:vendor/calc"}
+}
