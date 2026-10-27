@@ -468,6 +468,20 @@ class Composed(Run):
                     or result.get("reason") in ("blocked", "needs_contract", "not_rooted", "ask")
                 )
             )
+        if not failed and isinstance(result, dict):
+            if self.name == "ship":
+                needs = not result["delivered"] and result["reason"] not in (
+                    "no_action",
+                    "refuted",
+                    "failed",
+                    "pr_create_unresolved",
+                )
+            elif self.name == "upkeep":
+                needs = (
+                    not result["delivered"]
+                    and (self.result("assess") or {}).get("action") == "update"
+                    and not load(self.root / "delivery-failed.json")
+                )
         report = {
             "workflow": self.name,
             "mode": self.ctx["mode"],

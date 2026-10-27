@@ -302,3 +302,34 @@ def test_event_adapter_filters_action_and_repository():
         normalize(payload, "other/repo")
     with pytest.raises(ValueError, match="positive"):
         normalize({**payload, "issue": {"number": 0}}, "example/repo")
+
+
+def test_not_ready_delivery_requests_a_root_decision(start):
+    run = start("ship")
+    run.ctx["fixture"]["delivery_rounds"] = [{"ci": {"state": "other"}}]
+    save(run.root / "context.json", run.ctx)
+    report = execute(run)
+    assert report["result"]["reason"] == "ci_other"
+    assert not report["outcome"] and report["needs_decision"]
+
+
+def test_live_synthesis_transport_binds_typed_metadata_and_commit(start, tmp_path):
+    run = start("review")
+    execute(run)
+    stage = Stage(run, "synthesize")
+    stage.fixture = False
+    script = tmp_path / "controlled-synthesis.py"
+    script.write_text("""import os,pathlib,sys,json
+root=pathlib.Path(os.environ['ARTIFACTS_DIR'])
+(root/'received-synthesis.txt').write_text(sys.stdin.read())
+print(json.dumps({'ready':True,'action':'none','findings_summary':'Controlled transport','report':{'type':'archon_artifact','run_id':root.name,'path':'review/report.md'},'discoveries':[],'contract_left':[]}))
+""")
+    stage.config = {**stage.config, "agent_argv": [sys.executable, str(script)]}
+    node = stage.nodes["synthesize"]
+    result = stage.agent(node, "synthesize")
+    stage.check(result, node)
+    prompt = (run.root / "received-synthesis.txt").read_text()
+    assert "$TYPED_ARTIFACTS_FILE" not in prompt
+    assert "$mode.output.head" not in prompt
+    assert git(run.repo, "rev-parse", "HEAD") in prompt
+    assert str(run.root / "typed/root.json") in prompt
