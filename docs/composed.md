@@ -43,7 +43,7 @@ The offline project at [`examples/projects/dependency-update`](../examples/proje
 
 ## Live operation
 
-Copy `config/composed.json` to ignored `config/composed.local.json`. The agent CLI reads the rendered prompt on stdin and returns the original stage output directly: JSON where the source declares a schema, raw text for review lenses/intel. There is no provider-envelope repair, automatic model selection, or permission bypass. Configure authenticated `gh` or Archon's forge source yourself. Live model/forge behavior is experimental; fixture success does not establish live parity.
+OpenCode is the default through the included JSON-event adapter; see [agent setup and model selection](agents.md). Copy `config/composed.json` to ignored `config/composed.local.json`. The agent CLI reads the rendered prompt on stdin and returns the original stage output directly: JSON where the source declares a schema, raw text for review lenses/intel. The OpenCode adapter extracts the final assistant text without repairing its contents. Other provider envelopes require their own adapter. There is no automatic model selection or permission bypass. Configure authenticated `gh` or Archon's forge source yourself. Live model/forge behavior is experimental; fixture success does not establish live parity.
 
 ```bash
 uv run .tools/bin/dagu start workflows/review-live.yaml -- \

@@ -532,6 +532,9 @@ def initialize(
             git(repo, "rev-parse", "--show-toplevel")
             if not shutil.which(config["agent_argv"][0]):
                 raise ValueError("Configured agent CLI is not installed")
+            for executable in config.get("agent_requires", []):
+                if not shutil.which(executable):
+                    raise ValueError("Missing agent prerequisite: " + executable)
             if name == "standup" and not config.get("standup_in_place"):
                 raise ValueError(
                     "Standup fetches/pulls and persists local state; set standup_in_place=true explicitly"

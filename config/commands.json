@@ -4,11 +4,12 @@
     "bun",
     "archon",
     "gh",
-    "claude"
+    "opencode"
   ],
   "agent_argv": [
-    "claude",
-    "--print"
+    "python",
+    "-m",
+    "archon_dagu.opencode"
   ],
   "archon_argv": [
     "archon"

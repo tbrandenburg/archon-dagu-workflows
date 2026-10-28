@@ -63,7 +63,7 @@ There are 36 checked-in scenarios. Fixture runs create a disposable Git reposito
 
 Live agent and public-forge behavior is experimental. No paid model or real tracker writes are tested in CI. Controlled subprocess tests exercise the live transport and isolated Git commits; they do not establish model or real GitHub parity.
 
-Copy `config/standalone.json` to `config/standalone.local.json`. Configure `agent_argv` for a noninteractive CLI that accepts the full prompt on stdin and returns the requested stage value on stdout. SDLC stages return a bare JSON object; standup returns its raw brief and delimited state block. Provider JSON envelopes require an operator-supplied adapter. The port adds no permission-bypass or automatic approval flags. Script execution defaults to Bun; `make tools` installs checksum-verified Bun 1.4.4, DAGU 2.24.0, and Task 3.54.0.
+OpenCode is the default through the included JSON-event adapter; see [agent setup and model selection](agents.md). Copy `config/standalone.json` to `config/standalone.local.json`. To use another agent, configure `agent_argv` for a noninteractive CLI that accepts the full prompt on stdin and returns the requested stage value on stdout. SDLC stages return a bare JSON object; standup returns its raw brief and delimited state block. Other provider envelopes require an operator-supplied adapter. The port adds no permission-bypass or automatic approval flags. Script execution defaults to Bun; `make tools` installs checksum-verified Bun 1.4.4, DAGU 2.24.0, and Task 3.54.0.
 
 ```bash
 # Start from a clean, existing repository. Use an absolute, unique state directory.

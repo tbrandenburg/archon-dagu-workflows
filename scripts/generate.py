@@ -263,8 +263,8 @@ stages = [
 ]
 config = {
     "description": "Experimental live integration: pinned Archon scripts and configured fresh agent CLI; no merge",
-    "requires": ["bun", "archon", "gh", "claude"],
-    "agent_argv": ["claude", "--print"],
+    "requires": ["bun", "archon", "gh", "opencode"],
+    "agent_argv": ["python", "-m", "archon_dagu.opencode"],
     "archon_argv": ["archon"],
     "commands": {s: ["python", "-m", "archon_dagu.live_stage"] for s in stages},
 }
