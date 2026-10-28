@@ -1,106 +1,36 @@
-# Archon workflows for DAGU
+# Archon delivery for DAGU
 
 [![CI](https://github.com/tbrandenburg/archon-dagu-workflows/actions/workflows/ci.yml/badge.svg)](https://github.com/tbrandenburg/archon-dagu-workflows/actions/workflows/ci.yml)
 
-Four source-backed ports of [Archon's delivery workflow](https://github.com/coleam00/Archon/blob/72817c50dc51bb91773f71e5448bb7d387bfc8dd/.archon/workflows/sdlc/deliver/archon-deliver-block.yaml), with reproducible offline examples and an experimental live integration.
+Two live ports of [Archon's delivery workflow](https://github.com/coleam00/Archon/blob/72817c50dc51bb91773f71e5448bb7d387bfc8dd/.archon/workflows/sdlc/deliver/archon-deliver-block.yaml):
+
+| Workflow | Behavior |
+|---|---|
+| [simple-real](workflows/simple-real.yaml) | Compact controller handles the delivery loop; selected review lenses run sequentially. |
+| [detailed-real](workflows/detailed-real.yaml) | Closest source mapping: visible rounds and stages, with parallel review lenses in the shared round DAG. |
 
 **Accepted work → implement → draft PR → review → simplify → CI → fix findings → ready PR.**
 
-Delivery starts after the work has been decided. It does not triage issues, decide the product plan, merge a PR, or deploy. A successful run can report **not ready** and ask for a person's decision.
+Both use the same pinned Archon prompts, business rules, four-round limit, and live integrations. `archon-round.yaml` is an internal child used by detailed delivery, not a third public workflow. OpenCode is the default agent; the agent and model remain configurable.
 
-| Variant | Orchestration | External effects |
-|---|---|---|
-| [simple-dry](workflows/simple-dry.yaml) | One compact batch controller | Fixture agents/forge; original local decision/report scripts |
-| [detailed-dry](workflows/detailed-dry.yaml) | Visible rounds and parallel review lenses | Same fixtures and business rules |
-| [simple-real](workflows/simple-real.yaml) | Compact controller | Original publishing/thread scripts and configured agent CLI |
-| [detailed-real](workflows/detailed-real.yaml) | Visible DAGU stages | Same live integrations |
+Delivery starts after work is decided. It does not triage, create an initial product plan, merge, or deploy. Not-ready results ask for a developer's decision. Detailed delivery preserves source behavior as closely as this port supports; it is not proven full runtime/feature parity. Read [the walkthrough](docs/workflow.md) and [limitations](docs/parity.md).
 
-The original prompts and 186 upstream source files are pinned to Archon commit `72817c50dc51bb91773f71e5448bb7d387bfc8dd`. Live behavior is **experimental, not a proven feature-equivalent replacement for Archon**. Read [parity and limitations](docs/parity.md) before a disposable-repository trial.
+Standalone/composed ports and separate dry workflow variants have been removed. Their earlier versions remain in Git history. The immutable 186-file upstream SDLC pack is retained for relative imports and provenance, not as additional supported DAGU entrypoints.
 
-## Standalone developer workflows
+## Run delivery
 
-The repository also ports **validate, investigate, plan, triage, implement, and maintainer standup**, each with a fixture and live entrypoint. See [standalone workflows, prompts, examples, and fidelity](docs/standalone.md). These standalone tools complement the four delivery variants above.
-
-```bash
-make tools
-make standalone-demo WORKFLOW=investigate
-make standalone-demo WORKFLOW=triage STANDALONE_CASE=blocked
-make standalone-native
-```
-
-## Composed developer workflows
-
-**Review, simplify, PR publication, ship, upkeep, and approved issue responses** now have fixture/live ports. See [the stage and prompt guide, examples, and fidelity matrix](docs/composed.md).
-
-```bash
-make composed-demo
-make composed-demo COMPOSED_WORKFLOW=ship COMPOSED_CASE=plan
-make composed-native
-```
-
-## Quick start
-
-Requirements: [uv](https://docs.astral.sh/uv/), Python 3.12+, and Node.js 24. Task is optional; Make exposes the same targets. Linux/macOS are supported by the tool installer; use WSL on Windows.
+Requirements: [uv](https://docs.astral.sh/uv/), Python 3.12+, Node.js 24, Bun, DAGU, authenticated Archon/gh, and configured OpenCode/provider credentials. Linux/macOS are supported by the tool installer; use WSL on Windows.
 
 ```bash
 uv sync --frozen
-make demo                         # local offline rehearsal; no credentials
-make demo VARIANT=detailed-dry CASE=four_round_cap
-make test parity                  # contracts + 4096 source-decision comparisons
+make tools                         # checksum-verified DAGU, Task and Bun
+cp config/commands.json config/commands.local.json
 ```
 
-The local demo executes the workflow's real shell commands and dependencies through a small test harness. It **does not claim to be DAGU runtime execution**. Artifacts go to `.runs/`; no machine-specific paths or run artifacts are committed.
-
-To run the examples with the actual engine:
+Configure the agent/model and prerequisites in the ignored local config; see [agent setup](docs/agents.md). Use an explicitly isolated Git checkout for live work. The workflow can commit, push, create/update PRs and comments, and change draft status.
 
 ```bash
-make tools                        # checksum-verified DAGU 2.24.0 + Task 3.54.0 + Bun 1.4.4
-make validate                     # native validation + four dry previews
-make demo VARIANT=detailed-dry EXECUTOR=dagu
-make native-smoke                 # six real engine runs, all external effects fake
-```
-
-Equivalent Task commands:
-
-```bash
-.tools/bin/task --list
-.tools/bin/task demo VARIANT=detailed-dry CASE=fix_ci EXECUTOR=dagu
-.tools/bin/task ci
-.tools/bin/task ci-native
-```
-
-Native `dagu dry` only previews a workflow; fixture execution through `dagu start` is a separate check. Hosts that prohibit Unix sockets cannot run the native smoke suite. CI fails that check rather than silently substituting the local harness.
-
-## Developer commands
-
-| Make / Task target | Purpose |
-|---|---|
-| `setup`, `tools` | Install locked Python dependencies / verified command-line tools |
-| `generate`, `generated-check` | Regenerate portable workflows, schemas and prompts / detect drift |
-| `format`, `lint` | Format / check first-party Python; upstream source is untouched |
-| `source-check` | Verify the pinned upstream hashes |
-| `test`, `parity` | Fast contract/safety tests / 4096 reducer comparisons |
-| `scenarios` | 104 local command scenarios across all four variants; live effects mocked |
-| `validate`, `native-smoke` | Native DAGU previews / real scheduling of six fixture scenarios |
-| `demo` | Select `VARIANT`, `CASE`, and `EXECUTOR=local` or `dagu` |
-| `standalone-demo` | Select `WORKFLOW`, `STANDALONE_CASE`, and `EXECUTOR` |
-| `standalone-scenarios`, `standalone-native` | All 36 standalone fixtures locally / native previews and execution |
-| `composed-demo`, `composed-scenarios`, `composed-native` | Issue #3 examples / all 39 cases locally / native execution |
-| `ci`, `ci-native` | Credential-free quality suite / native engine suite |
-| `clean` | Remove `.runs/` only |
-
-Both entrypoints call the same Python command implementations. Workflow YAML uses explicit project, checkout and state paths. [Generation](scripts/generate.py) does not embed the author's home or virtualenv directory.
-
-## Live operation
-
-The live files can commit, push, publish PRs/comments and change draft status. They never merge. They require Bun, authenticated Archon/gh, a configured agent CLI, accepted work, and an explicitly isolated target checkout. No live workflow runs in CI.
-
-OpenCode is the default agent for every live workflow. The included adapter extracts its final assistant answer from JSON events. Install/authenticate OpenCode and choose its model before running live workflows; see [agent configuration](docs/agents.md).
-
-Copy `config/commands.json` to `config/commands.local.json` to customize the agent argv and installed-tool requirements. Private local config is ignored by Git. The agent must return the requested JSON object, not a provider envelope. No permission-bypass flags are added.
-
-```bash
-uv run dagu start workflows/detailed-real.yaml -- \
+uv run .tools/bin/dagu start workflows/simple-real.yaml -- \
   project_dir="$PWD" \
   state_dir="/absolute/artifacts/delivery-001" \
   repo="/absolute/isolated-checkout" \
@@ -108,16 +38,57 @@ uv run dagu start workflows/detailed-real.yaml -- \
   work="Implement the accepted plan at plans/my-change.md"
 ```
 
-Use `.tools/bin/dagu` in place of `dagu` if it is not on your PATH. Supply `pull_request=42` to continue a PR. `branch`, `part` and `errors` are also forwarded. Do not blindly retry a write whose remote result is uncertain.
+Replace `simple-real.yaml` with `detailed-real.yaml` for visible stages and parallel review. Use a unique state directory per run. Supply `pull_request=42` to continue a PR; `branch`, `part`, and `errors` are also forwarded. Inspect the report and any uncertain remote effects before retrying. Neither workflow merges.
+
+## Examples without external effects
+
+Examples execute those same live definitions with a test-only transport and a disposable local checkout. No model or GitHub operation is invoked; reports carry `simulated: true`. There are no separate dry workflow files.
+
+```bash
+make demo                          # simple-real, mocked CI repair, local harness
+make demo VARIANT=detailed-real CASE=four_round_cap
+make test parity                   # contracts and 4096 reducer comparisons
+make scenarios                     # 52 cases across both live entrypoints
+```
+
+The local harness executes workflow commands/dependencies but is not the DAGU runtime. For actual DAGU scheduling:
+
+```bash
+make validate                      # validate 3 definitions; preview 2 live entrypoints
+make demo VARIANT=detailed-real CASE=fix_ci EXECUTOR=dagu
+make native-smoke                  # 6 DAGU runs with mocked external effects
+```
+
+Native examples use `ready`, `fix_ci`, or `simplify_then_rereview` so they can finish unattended. Not-ready outcomes reach the real human task and are checked by the local scenarios instead. `dagu dry` is only a wiring preview, not a model or stage execution. Hosts that forbid Unix sockets cannot run native DAGU; CI requires actual native execution.
+
+Task exposes the same targets and variables:
+
+```bash
+.tools/bin/task --list
+.tools/bin/task demo VARIANT=detailed-real CASE=fix_ci EXECUTOR=dagu
+.tools/bin/task ci
+.tools/bin/task ci-native
+```
+
+## Developer commands
+
+| Make / Task target | Purpose |
+|---|---|
+| `setup`, `tools` | Install locked Python dependencies / verified DAGU, Task and Bun |
+| `generate`, `generated-check` | Regenerate workflows, schemas, prompts and config / detect drift |
+| `format`, `lint`, `source-check` | Format, check style, verify upstream hashes |
+| `test`, `parity`, `scenarios` | Contracts, 4096 reducer comparisons, 52 mock-effect scenarios |
+| `validate`, `native-smoke` | Native previews / six actual DAGU executions with mock effects |
+| `demo` | Select `VARIANT`, `CASE`, `EXECUTOR=local` or `dagu` |
+| `ci`, `ci-native` | Credential-free quality suite / native engine suite |
+| `clean` | Remove `.runs/` only |
 
 ## Layout
 
-- `src/archon_dagu/`: controller, live integration, explicit mock transport, local test harness.
-- `workflows/`: four entrypoints and the shared round DAG.
-- `prompts/`: original Archon prompts, not rewritten approximations.
-- `examples/fixtures/`: named offline outcomes, including CI repair, open threads and round exhaustion.
-- `tests/`, `scripts/`: unit tests, source parity, integration scenarios, tool installation and native examples.
-- `vendor/archon/`, `SOURCE.json`: immutable upstream source, license and hashes.
-- `docs/`: [workflow walkthrough](docs/workflow.md), [parity](docs/parity.md), [development](CONTRIBUTING.md).
+- `workflows/`: two live entrypoints and their shared round child.
+- `src/archon_dagu/`: delivery controller, live/OpenCode integrations, test transport and local harness.
+- `prompts/`: original delivery prompts; `examples/fixtures/`: named mock outcomes.
+- `tests/`, `scripts/`: contracts, generation, parity, examples, tooling and native checks.
+- `vendor/archon/`, `SOURCE.json`: upstream source, license and immutable hashes, pinned to `72817c50dc51bb91773f71e5448bb7d387bfc8dd`.
 
-See [NOTICE.md](NOTICE.md) for upstream attribution. Project code uses the existing [MIT license](LICENSE).
+Live agent and public-forge behavior remains experimental. CI uses no provider or GitHub-write credentials. See [development](CONTRIBUTING.md), [attribution](NOTICE.md), and [MIT license](LICENSE).

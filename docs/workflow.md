@@ -22,11 +22,13 @@ The full original prompts are in `prompts/`. For example, `implement.md` owns im
 ```bash
 make demo CASE=ready
 make demo CASE=fix_ci
-make demo VARIANT=detailed-dry CASE=four_round_cap
-make demo VARIANT=detailed-dry CASE=fix_ci EXECUTOR=dagu
+make demo VARIANT=detailed-real CASE=four_round_cap
+make demo VARIANT=detailed-real CASE=fix_ci EXECUTOR=dagu
 ```
 
-The default local executor uses the exact workflow commands with fixture responses. It does not run a model or mutate GitHub. `EXECUTOR=dagu` runs the actual engine. Artifacts and reports are written beneath `.runs/examples/` with unique names.
+Examples use the live entrypoints with an explicit test-only transport and a disposable Git checkout. The default local executor uses the exact workflow commands with fixture responses. It does not run a model or mutate GitHub. `EXECUTOR=dagu` runs the actual engine. Artifacts and reports are written beneath `.runs/examples/` with unique names.
+
+Native examples are limited to `ready`, `fix_ci`, and `simplify_then_rereview`, which finish unattended. Use the local executor for `four_round_cap` and other not-ready outcomes: it records the human task as waiting. There are no separate dry workflow files.
 
 `ready: false` is distinct from a process failure. For example, a capped batch completed its decision-making correctly but still needs a developer. A publishing crash remains a failed execution and must retain whatever PR identity was already recorded.
 

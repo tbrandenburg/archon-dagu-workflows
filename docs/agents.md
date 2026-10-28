@@ -10,13 +10,7 @@ Install OpenCode using its [official instructions](https://opencode.ai/docs/), c
 
 The wrapper sends the full prompt on stdin, runs in the workflow checkout, and inherits credentials/configuration from the operator's environment. Each invocation starts a fresh session: no `--continue`, `--session`, shared-server attachment, or automatic permission approval is added. Configure OpenCode's execution permissions for the intended project. Noninteractive permission requests may be rejected by OpenCode; inspect the result and diagnostics.
 
-Copy the relevant configuration to its ignored local counterpart:
-
-| Workflows | Local config |
-|---|---|
-| Standalone triage, investigate, plan, implement, validate, standup | `config/standalone.local.json` |
-| Review, simplify, PR, ship, upkeep, issue response | `config/composed.local.json` |
-| Simple/detailed delivery | `config/commands.local.json` |
+Copy `config/commands.json` to ignored `config/commands.local.json` for either delivery entrypoint.
 
 The wrapper inherits OpenCode's configured default model/agent. To choose explicitly, change `agent_argv` in that local file (replace `provider/model` with an installed model identifier):
 
@@ -24,7 +18,7 @@ The wrapper inherits OpenCode's configured default model/agent. To choose explic
 "agent_argv": ["python", "-m", "archon_dagu.opencode", "--model", "provider/model", "--agent", "build"]
 ```
 
-Optional `--variant` forwards the provider's reasoning variant. This selects one configuration for the whole run; per-stage provider routing is not built in. Ship/upkeep forward the composed `agent_argv` into their delivery controller unless an explicit `delivery.agent_argv` override replaces it.
+Optional `--variant` forwards the provider's reasoning variant. This selects one configuration for the whole run; per-stage provider routing is not built in.
 
 For a local adapter smoke test with a real model:
 
@@ -37,13 +31,13 @@ This invokes a real provider and may incur usage charges. It is not part of fixt
 
 ## Output and failure handling
 
-The wrapper separates OpenCode's newline-delimited events from the Archon stage result. It ignores tool/reasoning events and earlier assistant messages, concatenates text parts of the final assistant message, and writes that text unchanged to stdout. The existing workflow then parses JSON and validates the source schema where required; raw review reports and standup text stay raw. Markdown fences, invalid stage JSON, and missing artifacts are not repaired.
+The wrapper separates OpenCode's newline-delimited events from the Archon stage result. It ignores tool/reasoning events and earlier assistant messages, concatenates text parts of the final assistant message, and writes that text unchanged to stdout. The existing workflow then parses JSON and validates the source schema where required; the wrapper preserves raw text when used directly. Markdown fences, invalid stage JSON, and missing artifacts are not repaired.
 
 Nonzero OpenCode exits, error events, malformed event JSON, missing text, and explicitly abnormal final finish reasons fail the adapter without emitting a stage answer. OpenCode versions can omit the final `step_finish` event, so its absence alone is not treated as a failure. Process exit plus stage/schema/artifact checks are the available evidence; the event stream is not proof of a complete model run. Diagnostics go to stderr. The wrapper inherits the caller's process group so workflow cancellation reaches OpenCode too.
 
 ## Using another CLI
 
-The agent remains selectable. For example, replace `agent_argv` with `["claude", "--print"]` for a CLI returning the stage answer directly. In standalone/composed config, replace `agent_requires` with `["claude"]` (or the prerequisites for your wrapper). In delivery config, replace `opencode` in `requires` with your CLI's executable. For ship/upkeep with another CLI, also set `delivery.requires` to the appropriate full delivery prerequisite list, such as `["bun", "archon", "gh", "claude"]`.
+The agent remains selectable. For example, replace `agent_argv` with `["claude", "--print"]` for a CLI returning the stage answer directly. In delivery config, replace `opencode` in `requires` with your CLI's executable.
 
 Other CLIs must read stdin and return the original stage output without a provider envelope. Permission settings and provider authentication remain the operator's responsibility. There is no fallback to another agent if OpenCode fails.
 

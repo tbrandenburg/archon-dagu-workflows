@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import itertools
 import json
 import pathlib
 import subprocess
@@ -127,7 +126,8 @@ repo = B / ".runs/mock-checkout"
 repo.mkdir(exist_ok=True)
 subprocess.run(["git", "init", str(repo)], capture_output=True, check=True)
 results = []
-for shape, mode in itertools.product(["simple", "detailed"], ["dry", "real"]):
+for shape in ["simple", "detailed"]:
+    mode = "real"
     for case, (_, ready, reason, roundno) in CASES.items():
         state = B / ".runs/runs" / f"{shape}-{mode}-{case}-{uuid.uuid4().hex[:6]}"
         params = {
@@ -157,6 +157,8 @@ for shape, mode in itertools.product(["simple", "detailed"], ["dry", "real"]):
             and report.get("round") == roundno
             and failed == (reason == "failed")
             and report.get("merged") is False
+            and report.get("simulated") is True
+            and (failed or trace["status"] == ("succeeded" if ready else "waiting"))
         )
         if case == "discovery_relay":
             ok = ok and "Unrelated base defect" in report.get("summary", "")

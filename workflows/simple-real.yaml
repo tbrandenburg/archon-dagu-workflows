@@ -11,7 +11,7 @@ params:
   default: ''
 - name: fixture
   type: string
-  default: examples/fixtures/ready.json
+  default: ''
 - name: commands
   type: string
   default: config/commands.json

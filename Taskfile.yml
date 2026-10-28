@@ -1,11 +1,7 @@
 version: '3'
 vars:
-  VARIANT: '{{default "simple-dry" .VARIANT}}'
+  VARIANT: '{{default "simple-real" .VARIANT}}'
   CASE: '{{default "fix_ci" .CASE}}'
-  WORKFLOW: '{{default "investigate" .WORKFLOW}}'
-  STANDALONE_CASE: '{{default "happy" .STANDALONE_CASE}}'
-  COMPOSED_WORKFLOW: '{{default "review" .COMPOSED_WORKFLOW}}'
-  COMPOSED_CASE: '{{default "happy" .COMPOSED_CASE}}'
   EXECUTOR: '{{default "local" .EXECUTOR}}'
 tasks:
   default:
@@ -39,13 +35,13 @@ tasks:
     desc: Compare 4096 decisions with original Archon code
     cmds: [uv run python scripts/check_reducer.py]
   scenarios:
-    desc: Run 104 local YAML-command scenarios (external effects mocked)
+    desc: Run 52 local YAML-command scenarios (external effects mocked)
     cmds: [uv run python scripts/check_scenarios.py]
   validate:
-    desc: Native DAGU validation and dry previews for all four variants
+    desc: Native DAGU validation and dry previews for both live entrypoints
     cmds: [uv run python scripts/project.py validate]
   demo:
-    desc: Run an offline example; VARIANT/CASE/EXECUTOR select the scenario
+    desc: Run a live entrypoint with mock effects; VARIANT/CASE/EXECUTOR select the scenario
     cmds:
       - uv run python scripts/project.py demo --variant '{{.VARIANT}}' --case '{{.CASE}}' --executor '{{.EXECUTOR}}'
   native-smoke:
@@ -60,41 +56,11 @@ tasks:
       - task: test
       - task: parity
       - task: scenarios
-      - task: standalone-scenarios
-      - task: composed-scenarios
   ci-native:
     desc: Run native DAGU checks (requires installed DAGU and Unix sockets)
     cmds:
       - task: validate
       - task: native-smoke
-      - task: standalone-native
-      - task: composed-native
   clean:
     desc: Remove generated run artifacts only
     cmds: [uv run python scripts/project.py clean]
-
-  standalone-demo:
-    desc: Run a standalone fixture (WORKFLOW, STANDALONE_CASE, EXECUTOR)
-    cmds:
-      - uv run python scripts/standalone.py demo --workflow '{{.WORKFLOW}}' --case '{{.STANDALONE_CASE}}' --executor '{{.EXECUTOR}}'
-  standalone-scenarios:
-    desc: Execute all standalone fixture cases locally
-    cmds: [uv run python scripts/standalone.py scenarios]
-  standalone-native:
-    desc: Preview all twelve standalone DAGs and execute every fixture in native DAGU
-    cmds:
-      - uv run python scripts/standalone.py validate
-      - uv run python scripts/standalone.py scenarios --executor dagu
-
-  composed-demo:
-    desc: Run issue-3 fixture (COMPOSED_WORKFLOW, COMPOSED_CASE, EXECUTOR)
-    cmds:
-      - uv run python scripts/composed.py demo --workflow '{{.COMPOSED_WORKFLOW}}' --case '{{.COMPOSED_CASE}}' --executor '{{.EXECUTOR}}'
-  composed-scenarios:
-    desc: Run all issue-3 fixture cases locally
-    cmds: [uv run python scripts/composed.py scenarios]
-  composed-native:
-    desc: Preview twelve issue-3 entrypoints and execute all fixtures in native DAGU
-    cmds:
-      - uv run python scripts/composed.py validate
-      - uv run python scripts/composed.py scenarios --executor dagu

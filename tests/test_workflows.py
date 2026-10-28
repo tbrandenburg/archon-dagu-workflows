@@ -34,18 +34,21 @@ def test_only_root_real_workflows_ask_for_human_input():
     for file in (BASE / "workflows").glob("*.yaml"):
         data = yaml.safe_load(file.read_text())
         tasks = [s for s in data["steps"] if s.get("action") == "human.task"]
-        asks = file.stem.endswith("-real") or file.stem in {
-            "plan-live",
-            "triage-live",
-            "investigate-live",
-            "implement-live",
-            "review-live",
-            "ship-live",
-            "upkeep-live",
-        }
+        asks = file.stem in {"simple-real", "detailed-real"}
         assert len(tasks) == (1 if asks else 0)
 
 
 def test_manifest_has_canonical_file_order():
     manifest = json.loads((BASE / "SOURCE.json").read_text())
     assert list(manifest["hashes"]) == sorted(manifest["hashes"])
+
+
+def test_only_live_delivery_entrypoints_and_required_child_remain():
+    files = {p.name for p in (BASE / "workflows").glob("*.yaml")}
+    assert files == {"simple-real.yaml", "detailed-real.yaml", "archon-round.yaml"}
+    for name in ("simple-real", "detailed-real"):
+        data = yaml.safe_load((BASE / "workflows" / (name + ".yaml")).read_text())
+        assert data["env"]["PORT_MODE"] == "real"
+        params = {p["name"]: p for p in data["params"]}
+        assert params["commands"]["default"] == "config/commands.json"
+        assert params["fixture"]["default"] == ""
