@@ -5,6 +5,8 @@ import pathlib
 import shlex
 
 import yaml
+from generate_composed import generate as generate_composed
+from generate_standalone import generate as generate_standalone
 
 B = pathlib.Path(__file__).resolve().parents[1]
 S = B / "vendor/archon/.archon/workflows/sdlc"
@@ -262,3 +264,6 @@ config = {
     "commands": {s: ["python", "-m", "archon_dagu.live_stage"] for s in stages},
 }
 (B / "config/commands.json").write_text(json.dumps(config, indent=2) + "\n")
+
+generate_standalone()
+generate_composed()

@@ -7,7 +7,7 @@ Before opening a PR:
 ```bash
 make lint source-check generated-check test parity
 make tools
-make scenarios
+make scenarios standalone-scenarios composed-scenarios
 make ci-native
 ```
 
@@ -19,4 +19,6 @@ Tests should exercise decisions, missing evidence, publication identity and fail
 
 For problems, include the selected variant, fixture, tool versions and relevant log. Do not include credentials or private issue/source data. Report sensitive vulnerabilities through GitHub's private reporting options when available.
 
-Only `simple-real.yaml` and `detailed-real.yaml` are public delivery entrypoints. `archon-round.yaml` is their detailed-mode helper. Keep examples and CI on these same definitions with explicit mock transports; do not add separate dry workflow variants. Native not-ready runs require a human task, so the unattended native smoke cases must reach readiness. The local harness covers round exhaustion and other not-ready outcomes and verifies they wait for input.
+Only delivery is restricted to `simple-real.yaml` and `detailed-real.yaml` plus the required `archon-round.yaml` helper. Keep all standalone/composed fixture and live workflows, their generators, prompts, source manifests and tests. Do not reintroduce delivery dry variants. See [standalone workflows](docs/standalone.md) and [composed workflows](docs/composed.md).
+
+`make ci` executes 127 local cases (52 delivery, 36 standalone, 39 composed); `make ci-native` requires 81 native runs. When a host cannot execute Bun, standalone/composed local fixture runners accept explicitly labelled Node-shim configurations; do not substitute them in native CI. Examples and fixture runners must not invoke agents or public forge operations. Live workflows use OpenCode/GitHub CLI without Archon installed.

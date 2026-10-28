@@ -1,0 +1,45 @@
+{
+  "workflow": "validate",
+  "agents": {
+    "discover": {
+      "checks": [
+        {
+          "name": "fail",
+          "argv": [
+            "python",
+            "-c",
+            "raise SystemExit(1)"
+          ],
+          "group": "gate"
+        },
+        {
+          "name": "must-skip",
+          "argv": [
+            "python",
+            "-c",
+            "raise RuntimeError(\"should not run\")"
+          ],
+          "group": "gate"
+        },
+        {
+          "name": "independent",
+          "argv": [
+            "python",
+            "-c",
+            "print(\"independent gate ran\")"
+          ],
+          "group": "other"
+        }
+      ],
+      "notes": "Local fixture checks, no external services."
+    },
+    "classify": {
+      "red_cause": "introduced",
+      "summary": "Fixture evidence classified as introduced"
+    }
+  },
+  "expected": {
+    "green": false,
+    "red_cause": "introduced"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "workflow": "upkeep",
+  "agents": {
+    "assess": {
+      "action": "no_action",
+      "summary": "Fixture dependency assessment: already-current",
+      "report": {
+        "type": "archon_artifact",
+        "run_id": "$RUN_ID",
+        "path": "upkeep-assessment.md"
+      }
+    }
+  },
+  "artifacts": {
+    "assess": {
+      "upkeep-assessment.md": "# Dependency assessment\nFixture target, locked version, affected usage, peer constraints, chosen mechanism, lockfile update order, rollback and focused checks. Case: already-current\n"
+    }
+  },
+  "expected": {
+    "outcome": false,
+    "delivered": false
+  }
+}

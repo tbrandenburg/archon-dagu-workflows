@@ -26,12 +26,23 @@ def source_check():
         actual = hashlib.sha256((SOURCE / path).read_bytes()).hexdigest()
         if actual != expected:
             raise SystemExit(f"Pinned upstream source changed: {path}")
+    extra = json.loads((BASE / "STANDALONE_SOURCE.json").read_text())
+    for path, expected in extra["extra_hashes"].items():
+        actual = hashlib.sha256((BASE / "vendor/archon" / path).read_bytes()).hexdigest()
+        if actual != expected:
+            raise SystemExit("Pinned standalone source changed: " + path)
+    composed = json.loads((BASE / "COMPOSED_SOURCE.json").read_text())
+    for path, expected in composed["extra_hashes"].items():
+        if hashlib.sha256((BASE / "vendor/archon" / path).read_bytes()).hexdigest() != expected:
+            raise SystemExit("Pinned composed source changed: " + path)
     print(f"Verified {len(manifest['hashes'])} pinned upstream files")
 
 
 def generated_check():
     paths = [
         BASE / "SOURCE.json",
+        BASE / "STANDALONE_SOURCE.json",
+        BASE / "COMPOSED_SOURCE.json",
         BASE / "schemas.json",
         BASE / "config/commands.json",
     ]

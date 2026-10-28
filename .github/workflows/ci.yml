@@ -38,8 +38,8 @@ jobs:
         run: make lint source-check generated-check
       - name: Contracts and upstream parity
         run: make test parity
-      - name: Both delivery entrypoints with mock effects
-        run: make scenarios
+      - name: Delivery, standalone and composed fixtures
+        run: make scenarios standalone-scenarios composed-scenarios
       - name: Upload fixture evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -47,6 +47,8 @@ jobs:
           name: scenarios-python-${{ matrix.python }}
           path: |
             .runs/cases.json
+            .runs/standalone-local.json
+            .runs/composed-local.json
             .runs/reducer-parity.json
           include-hidden-files: true
           if-no-files-found: ignore
@@ -86,5 +88,11 @@ jobs:
             .runs/examples/**/report.json
             .runs/examples/**/attention.json
             .runs/dagu/logs/**
+            .runs/standalone-dagu.json
+            .runs/composed-dagu.json
+            .runs/standalone/**/report.json
+            .runs/standalone/**/dagu.log
+            .runs/composed/**/report.json
+            .runs/composed/**/dagu.log
           include-hidden-files: true
           if-no-files-found: ignore

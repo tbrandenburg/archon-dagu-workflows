@@ -1,0 +1,21 @@
+{
+  "workflow": "investigate",
+  "agents": {
+    "investigate": {
+      "verdict": "rooted",
+      "summary": "Fixture causal evidence: rooted",
+      "report": {
+        "type": "archon_artifact",
+        "run_id": "$RUN_ID",
+        "path": "investigation.md"
+      }
+    }
+  },
+  "artifacts": {
+    "investigation.md": "# Investigation\nFixture causal evidence; this is not a live diagnosis.\n"
+  },
+  "expected": {
+    "rooted": true,
+    "verdict": "rooted"
+  }
+}

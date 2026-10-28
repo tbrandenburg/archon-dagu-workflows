@@ -1,0 +1,2976 @@
+{
+  "repository": "coleam00/Archon",
+  "commit": "72817c50dc51bb91773f71e5448bb7d387bfc8dd",
+  "graphs": {
+    "review": {
+      "policy": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [],
+        "kind": "node",
+        "node": {
+          "id": "policy",
+          "script": "policy",
+          "runtime": "bun",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "defaults": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "defaults"
+            ]
+          }
+        }
+      },
+      "mode": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "scope"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "mode",
+          "script": "review-round",
+          "runtime": "bun",
+          "depends_on": [
+            "scope"
+          ],
+          "when": "$scope.output.head_matches == true",
+          "with": {
+            "prior_report": "$INPUTS.prior_report",
+            "light": "$INPUTS.light",
+            "part": "$INPUTS.part"
+          },
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "continuation": {
+                "type": "boolean"
+              },
+              "light": {
+                "type": "boolean"
+              },
+              "head": {
+                "type": "string",
+                "minLength": 1
+              },
+              "cursor": {
+                "type": "string"
+              },
+              "risks": {
+                "type": "string",
+                "minLength": 1
+              },
+              "execution": {
+                "type": "object"
+              },
+              "seams": {
+                "type": "boolean"
+              },
+              "code": {
+                "type": "boolean"
+              },
+              "tests": {
+                "type": "boolean"
+              },
+              "errors": {
+                "type": "boolean"
+              },
+              "docs": {
+                "type": "boolean"
+              },
+              "part": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "delivers": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "parts": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "part": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "items": {
+                          "type": "array",
+                          "minItems": 1,
+                          "items": {
+                            "type": "string",
+                            "pattern": "\\S"
+                          }
+                        }
+                      },
+                      "required": [
+                        "part",
+                        "items"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "delivers",
+                  "parts"
+                ]
+              }
+            },
+            "required": [
+              "continuation",
+              "light",
+              "head",
+              "cursor",
+              "risks",
+              "execution",
+              "seams",
+              "code",
+              "tests",
+              "errors",
+              "docs",
+              "part"
+            ]
+          }
+        }
+      },
+      "review-dir": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [],
+        "kind": "node",
+        "node": {
+          "id": "review-dir",
+          "bash": "mkdir -p \"$ARTIFACTS_DIR/review\""
+        }
+      },
+      "scope": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "review-dir"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "scope",
+          "command": "review-scope",
+          "context": "fresh",
+          "mutates_checkout": false,
+          "depends_on": [
+            "review-dir"
+          ],
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "head_matches": {
+                "type": "boolean"
+              },
+              "pr": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "repo": {
+                    "type": "object",
+                    "properties": {
+                      "host": {
+                        "type": "string",
+                        "pattern": "\\S"
+                      },
+                      "path": {
+                        "type": "string",
+                        "pattern": "\\S"
+                      }
+                    },
+                    "required": [
+                      "host",
+                      "path"
+                    ]
+                  },
+                  "number": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "repo",
+                  "number"
+                ]
+              },
+              "report": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "archon_artifact"
+                    ]
+                  },
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string",
+                    "enum": [
+                      "review/scope.md"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "run_id",
+                  "path"
+                ]
+              }
+            },
+            "required": [
+              "head_matches",
+              "pr",
+              "report"
+            ]
+          }
+        }
+      },
+      "route": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "mode",
+          "scope"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "route",
+          "command": "route-review",
+          "model": "small",
+          "context": "fresh",
+          "mutates_checkout": false,
+          "depends_on": [
+            "mode",
+            "scope"
+          ],
+          "when": "$scope.output.head_matches == true && $mode.output.light == false",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "seams": {
+                "type": "boolean"
+              },
+              "code": {
+                "type": "boolean"
+              },
+              "tests": {
+                "type": "boolean"
+              },
+              "errors": {
+                "type": "boolean"
+              },
+              "docs": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string",
+                "pattern": "\\S"
+              }
+            },
+            "required": [
+              "seams",
+              "code",
+              "tests",
+              "errors",
+              "docs",
+              "reason"
+            ]
+          }
+        }
+      },
+      "seams": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "scope",
+          "route"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "seams",
+          "output_type": "review-lens",
+          "model": [
+            "@review-seams",
+            "@reviewer",
+            "medium"
+          ],
+          "command": "review-seams",
+          "context": "fresh",
+          "mutates_checkout": false,
+          "depends_on": [
+            "scope",
+            "route"
+          ],
+          "trigger_rule": "none_failed_min_one_success",
+          "when": "$scope.output.head_matches == true && $mode.output.light == false && $route.output.seams == true || $scope.output.head_matches == true && $mode.output.seams == true"
+        }
+      },
+      "code": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "scope",
+          "route"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "code",
+          "output_type": "review-lens",
+          "model": [
+            "@review-code",
+            "@reviewer",
+            "large"
+          ],
+          "command": "review-code",
+          "context": "fresh",
+          "mutates_checkout": false,
+          "depends_on": [
+            "scope",
+            "route"
+          ],
+          "trigger_rule": "none_failed_min_one_success",
+          "when": "$scope.output.head_matches == true && $mode.output.light == false && $route.output.code == true || $scope.output.head_matches == true && $mode.output.code == true"
+        }
+      },
+      "tests": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "scope",
+          "route"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "tests",
+          "output_type": "review-lens",
+          "model": [
+            "@review-tests",
+            "@reviewer",
+            "medium"
+          ],
+          "command": "review-tests",
+          "context": "fresh",
+          "mutates_checkout": false,
+          "depends_on": [
+            "scope",
+            "route"
+          ],
+          "trigger_rule": "none_failed_min_one_success",
+          "when": "$scope.output.head_matches == true && $mode.output.light == false && $route.output.tests == true || $scope.output.head_matches == true && $mode.output.tests == true"
+        }
+      },
+      "errors": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "scope",
+          "route"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "errors",
+          "output_type": "review-lens",
+          "model": [
+            "@review-errors",
+            "@reviewer",
+            "medium"
+          ],
+          "command": "review-errors",
+          "context": "fresh",
+          "mutates_checkout": false,
+          "depends_on": [
+            "scope",
+            "route"
+          ],
+          "trigger_rule": "none_failed_min_one_success",
+          "when": "$scope.output.head_matches == true && $mode.output.light == false && $route.output.errors == true || $scope.output.head_matches == true && $mode.output.errors == true"
+        }
+      },
+      "docs": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "scope",
+          "route"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "docs",
+          "output_type": "review-lens",
+          "model": [
+            "@review-docs",
+            "@reviewer",
+            "medium"
+          ],
+          "command": "review-docs",
+          "context": "fresh",
+          "mutates_checkout": false,
+          "depends_on": [
+            "scope",
+            "route"
+          ],
+          "trigger_rule": "none_failed_min_one_success",
+          "when": "$scope.output.head_matches == true && $mode.output.light == false && $route.output.docs == true || $scope.output.head_matches == true && $mode.output.docs == true"
+        }
+      },
+      "review-complete": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "scope",
+          "route",
+          "seams",
+          "code",
+          "tests",
+          "errors",
+          "docs"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "review-complete",
+          "bash": "true",
+          "depends_on": [
+            "scope",
+            "route",
+            "seams",
+            "code",
+            "tests",
+            "errors",
+            "docs"
+          ],
+          "trigger_rule": "all_done",
+          "when": "$scope.output.head_matches == true"
+        }
+      },
+      "synthesize": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "policy",
+          "mode",
+          "scope",
+          "review-complete"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "synthesize",
+          "command": "review-synthesize",
+          "context": "fresh",
+          "mutates_checkout": false,
+          "output_type": "review-report",
+          "depends_on": [
+            "policy",
+            "mode",
+            "scope",
+            "review-complete"
+          ],
+          "when": "$scope.output.head_matches == true",
+          "with": {
+            "policy_defaults": "$policy.output.defaults"
+          },
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "ready": {
+                "type": "boolean"
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "correct",
+                  "replan",
+                  "ask"
+                ]
+              },
+              "findings_summary": {
+                "type": "string"
+              },
+              "report": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "archon_artifact"
+                    ]
+                  },
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string",
+                    "enum": [
+                      "review/report.md"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "run_id",
+                  "path"
+                ]
+              },
+              "discoveries": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "pattern": "\\S"
+                    },
+                    "claim": {
+                      "type": "string",
+                      "pattern": "\\S"
+                    },
+                    "evidence": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 1
+                    },
+                    "relation": {
+                      "type": "string",
+                      "enum": [
+                        "unrelated",
+                        "scope_conflict",
+                        "note"
+                      ]
+                    },
+                    "source_nodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 1
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "claim",
+                    "evidence",
+                    "relation",
+                    "source_nodes"
+                  ]
+                }
+              },
+              "contract_left": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "\\S"
+                }
+              }
+            },
+            "required": [
+              "ready",
+              "action",
+              "findings_summary",
+              "report",
+              "discoveries",
+              "contract_left"
+            ]
+          }
+        }
+      },
+      "publish": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "synthesize"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "publish",
+          "script": "publish-review",
+          "runtime": "bun",
+          "depends_on": [
+            "synthesize"
+          ],
+          "when": "$scope.output.head_matches == true",
+          "with": {
+            "scope": "$INPUTS.scope",
+            "pr": "$scope.output.pr",
+            "report": "$ARTIFACTS_DIR/review/report.md",
+            "head": "$mode.output.head",
+            "ready": "$synthesize.output.ready",
+            "action": "$synthesize.output.action",
+            "summary": "$synthesize.output.findings_summary",
+            "report_pointer": "$synthesize.output.report",
+            "discoveries": {
+              "from": "$synthesize.output.discoveries"
+            },
+            "contract_left": {
+              "from": "$synthesize.output.contract_left"
+            }
+          },
+          "output_type": "review-report",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "ready": {
+                "type": "boolean"
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "correct",
+                  "replan",
+                  "ask"
+                ]
+              },
+              "findings_summary": {
+                "type": "string"
+              },
+              "report": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "archon_artifact"
+                    ]
+                  },
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string",
+                    "enum": [
+                      "review/report.md"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "run_id",
+                  "path"
+                ]
+              },
+              "discoveries": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "pattern": "\\S"
+                    },
+                    "claim": {
+                      "type": "string",
+                      "pattern": "\\S"
+                    },
+                    "evidence": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 1
+                    },
+                    "relation": {
+                      "type": "string",
+                      "enum": [
+                        "unrelated",
+                        "scope_conflict",
+                        "note"
+                      ]
+                    },
+                    "source_nodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 1
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "claim",
+                    "evidence",
+                    "relation",
+                    "source_nodes"
+                  ]
+                }
+              },
+              "contract_left": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "\\S"
+                }
+              }
+            },
+            "required": [
+              "ready",
+              "action",
+              "findings_summary",
+              "report",
+              "discoveries",
+              "contract_left"
+            ]
+          }
+        }
+      },
+      "result": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "scope",
+          "publish"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "result",
+          "depends_on": [
+            "scope",
+            "publish"
+          ],
+          "trigger_rule": "none_failed_min_one_success",
+          "with": {
+            "verdict": {
+              "from": "$publish.output",
+              "if_skipped": null
+            },
+            "head_matches": "$scope.output.head_matches",
+            "scope_report": {
+              "from": "$scope.output.report"
+            }
+          },
+          "runtime": "bun",
+          "script": "const verdict = JSON.parse(process.env.INPUTS_VERDICT);\nconst report = JSON.parse(process.env.INPUTS_SCOPE_REPORT);\nconsole.log(JSON.stringify(JSON.parse(process.env.INPUTS_HEAD_MATCHES) ? verdict : {\n  ready: false, action: \"ask\",\n  findings_summary: require(\"node:fs\").readFileSync(require(\"node:path\").join(process.env.ARTIFACTS_DIR, report.path), \"utf8\"),\n  report, discoveries: [], contract_left: [\"PR head mismatch prevented contract review.\"]\n}));\n",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "ready": {
+                "type": "boolean"
+              },
+              "action": {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "correct",
+                  "replan",
+                  "ask"
+                ]
+              },
+              "findings_summary": {
+                "type": "string"
+              },
+              "report": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "archon_artifact"
+                    ]
+                  },
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string",
+                    "enum": [
+                      "review/report.md",
+                      "review/scope.md"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "run_id",
+                  "path"
+                ]
+              },
+              "discoveries": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "pattern": "\\S"
+                    },
+                    "claim": {
+                      "type": "string",
+                      "pattern": "\\S"
+                    },
+                    "evidence": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 1
+                    },
+                    "relation": {
+                      "type": "string",
+                      "enum": [
+                        "unrelated",
+                        "scope_conflict",
+                        "note"
+                      ]
+                    },
+                    "source_nodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "minItems": 1
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "claim",
+                    "evidence",
+                    "relation",
+                    "source_nodes"
+                  ]
+                }
+              },
+              "contract_left": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "\\S"
+                }
+              }
+            },
+            "required": [
+              "ready",
+              "action",
+              "findings_summary",
+              "report",
+              "discoveries",
+              "contract_left"
+            ]
+          }
+        }
+      },
+      "prune-scratch": {
+        "source": "review/archon-review-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "synthesize"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "prune-scratch",
+          "script": "prune-scratch",
+          "runtime": "bun",
+          "depends_on": [
+            "synthesize"
+          ],
+          "trigger_rule": "all_done",
+          "with": {
+            "lens": ""
+          }
+        }
+      }
+    },
+    "simplify": {
+      "simplify": {
+        "source": "simplify/archon-simplify.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [],
+        "kind": "node",
+        "node": {
+          "id": "simplify",
+          "output_type": "structure-review",
+          "command": "simplify",
+          "context": "fresh",
+          "mutates_checkout": false,
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "findings": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "findings"
+            ]
+          }
+        }
+      },
+      "prune-scratch": {
+        "source": "simplify/archon-simplify.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "simplify"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "prune-scratch",
+          "script": "prune-scratch",
+          "runtime": "bun",
+          "depends_on": [
+            "simplify"
+          ],
+          "trigger_rule": "all_done",
+          "with": {
+            "lens": "simplify"
+          }
+        }
+      }
+    },
+    "pr": {
+      "forge": {
+        "source": "pr/archon-pr.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [],
+        "kind": "node",
+        "node": {
+          "id": "forge",
+          "script": "forge-check",
+          "runtime": "bun",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string",
+                "enum": [
+                  "gh",
+                  "forge"
+                ]
+              }
+            },
+            "required": [
+              "source"
+            ]
+          }
+        }
+      },
+      "prepare": {
+        "source": "pr/archon-pr.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "forge"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "prepare",
+          "command": "pr",
+          "depends_on": [
+            "forge"
+          ],
+          "with": {
+            "source": "$forge.output.source"
+          },
+          "output_type": "pull-request-intent",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "repo": {
+                "type": "object",
+                "properties": {
+                  "host": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  },
+                  "path": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "host",
+                  "path"
+                ]
+              },
+              "head_repo": {
+                "type": "object",
+                "properties": {
+                  "host": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  },
+                  "path": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "host",
+                  "path"
+                ]
+              },
+              "head": {
+                "type": "string",
+                "pattern": "\\S"
+              },
+              "base": {
+                "type": "string",
+                "pattern": "\\S"
+              },
+              "existing": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 1
+              },
+              "title": {
+                "type": "string",
+                "pattern": "\\S"
+              },
+              "body": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "archon_artifact"
+                    ]
+                  },
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string",
+                    "enum": [
+                      "pr-body.md"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "run_id",
+                  "path"
+                ]
+              },
+              "description": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "archon_artifact"
+                    ]
+                  },
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string",
+                    "enum": [
+                      "pr-description.md"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "run_id",
+                  "path"
+                ]
+              },
+              "summary": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "repo",
+              "head_repo",
+              "head",
+              "base",
+              "existing",
+              "title",
+              "body",
+              "description",
+              "summary"
+            ]
+          }
+        }
+      },
+      "publish": {
+        "source": "pr/archon-pr.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "prepare"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "publish",
+          "script": "publish-pr",
+          "runtime": "bun",
+          "timeout": 180000,
+          "depends_on": [
+            "prepare"
+          ],
+          "with": {
+            "repo": {
+              "from": "$prepare.output.repo"
+            },
+            "head_repo": {
+              "from": "$prepare.output.head_repo"
+            },
+            "head": "$prepare.output.head",
+            "base": "$prepare.output.base",
+            "existing": {
+              "from": "$prepare.output.existing"
+            },
+            "title": "$prepare.output.title",
+            "body": {
+              "from": "$prepare.output.body"
+            },
+            "description": {
+              "from": "$prepare.output.description"
+            },
+            "publish_description": "$INPUTS.publish_description",
+            "draft": "$INPUTS.draft",
+            "pull_request": "$INPUTS.pull_request",
+            "branch": "$INPUTS.branch"
+          },
+          "output_type": "pull-request",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "schemaVersion": {
+                "type": "integer",
+                "enum": [
+                  1
+                ]
+              },
+              "repo": {
+                "type": "object",
+                "properties": {
+                  "host": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "host",
+                  "path"
+                ]
+              },
+              "number": {
+                "type": "integer"
+              },
+              "url": {
+                "type": "string"
+              },
+              "head": {
+                "type": "string"
+              },
+              "base": {
+                "type": "string"
+              },
+              "is_draft": {
+                "type": "boolean"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "closed",
+                  "merged"
+                ]
+              },
+              "head_repo": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "host": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "host",
+                  "path"
+                ]
+              },
+              "head_revision": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "base_revision": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "maintainer_can_modify": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "schemaVersion",
+              "repo",
+              "number",
+              "url",
+              "head",
+              "base",
+              "is_draft",
+              "state",
+              "head_repo",
+              "head_revision",
+              "base_revision",
+              "maintainer_can_modify"
+            ]
+          }
+        }
+      }
+    },
+    "ship": {
+      "forge": {
+        "source": "ship/archon-ship-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [],
+        "kind": "node",
+        "node": {
+          "id": "forge",
+          "script": "forge-check",
+          "runtime": "bun",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string",
+                "enum": [
+                  "gh",
+                  "forge"
+                ]
+              }
+            },
+            "required": [
+              "source"
+            ]
+          }
+        }
+      },
+      "triage.policy": {
+        "source": "triage/archon-triage-block.yaml",
+        "prefix": "triage.",
+        "parent": "triage",
+        "depends": [
+          "forge"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "policy",
+          "script": "policy",
+          "runtime": "bun",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "defaults": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "defaults"
+            ]
+          }
+        }
+      },
+      "triage.triage": {
+        "source": "triage/archon-triage-block.yaml",
+        "prefix": "triage.",
+        "parent": "triage",
+        "depends": [
+          "triage.policy"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "triage",
+          "command": "triage",
+          "depends_on": [
+            "policy"
+          ],
+          "with": {
+            "policy_defaults": "$policy.output.defaults"
+          },
+          "mutates_checkout": false,
+          "output_type": "work-triage",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "decision": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "contract": {
+                        "type": "string",
+                        "enum": [
+                          "READY"
+                        ]
+                      },
+                      "route": {
+                        "type": "string",
+                        "enum": [
+                          "investigate",
+                          "plan",
+                          "deliver"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "contract",
+                      "route"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "contract": {
+                        "type": "string",
+                        "enum": [
+                          "READY"
+                        ]
+                      },
+                      "route": {
+                        "type": "string",
+                        "enum": [
+                          "continue"
+                        ]
+                      },
+                      "pull_request": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "contract",
+                      "route",
+                      "pull_request"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "contract": {
+                        "type": "string",
+                        "enum": [
+                          "NEEDS_CONTRACT_WORK"
+                        ]
+                      },
+                      "proposed_edits": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "pattern": "\\S"
+                          },
+                          "body": {
+                            "type": "string",
+                            "pattern": "\\S"
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "body"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "contract",
+                      "proposed_edits"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "contract": {
+                        "type": "string",
+                        "enum": [
+                          "BLOCKED"
+                        ]
+                      },
+                      "blocked_reason": {
+                        "type": "string",
+                        "pattern": "\\S"
+                      },
+                      "blocked_by": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "contract",
+                      "blocked_reason",
+                      "blocked_by"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "contract": {
+                        "type": "string",
+                        "enum": [
+                          "NO_ACTION"
+                        ]
+                      },
+                      "closure": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "duplicate"
+                                ]
+                              },
+                              "url": {
+                                "type": "string",
+                                "pattern": "\\S"
+                              },
+                              "original": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "repo": {
+                                    "type": "object",
+                                    "properties": {
+                                      "host": {
+                                        "type": "string",
+                                        "pattern": "\\S"
+                                      },
+                                      "path": {
+                                        "type": "string",
+                                        "pattern": "\\S"
+                                      }
+                                    },
+                                    "required": [
+                                      "host",
+                                      "path"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  "number": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                  }
+                                },
+                                "required": [
+                                  "repo",
+                                  "number"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "url",
+                              "original"
+                            ]
+                          },
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "delivered"
+                                ]
+                              },
+                              "url": {
+                                "type": "string",
+                                "pattern": "\\S"
+                              }
+                            },
+                            "required": [
+                              "kind",
+                              "url"
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "contract",
+                      "closure"
+                    ]
+                  }
+                ]
+              },
+              "type": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "enum": [
+                      "bug",
+                      "feature",
+                      "refactor",
+                      "maintenance",
+                      "docs",
+                      "question"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "value",
+                  "reason"
+                ]
+              },
+              "size": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "enum": [
+                      "s",
+                      "m",
+                      "l"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "value",
+                  "reason"
+                ]
+              },
+              "complexity": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "value",
+                  "reason"
+                ]
+              },
+              "importance": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "value",
+                  "reason"
+                ]
+              },
+              "urgency": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "soon",
+                      "now"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "value",
+                  "reason"
+                ]
+              },
+              "item": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "repo": {
+                        "type": "object",
+                        "properties": {
+                          "host": {
+                            "type": "string",
+                            "pattern": "\\S"
+                          },
+                          "path": {
+                            "type": "string",
+                            "pattern": "\\S"
+                          }
+                        },
+                        "required": [
+                          "host",
+                          "path"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "number": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "repo",
+                      "number"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "repo": {
+                        "type": "object",
+                        "properties": {
+                          "host": {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          },
+                          "path": {
+                            "type": "string",
+                            "enum": [
+                              ""
+                            ]
+                          }
+                        },
+                        "required": [
+                          "host",
+                          "path"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "number": {
+                        "type": "integer",
+                        "enum": [
+                          0
+                        ]
+                      }
+                    },
+                    "required": [
+                      "repo",
+                      "number"
+                    ]
+                  }
+                ]
+              },
+              "area_labels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "related": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "pattern": "\\S"
+                    },
+                    "relation": {
+                      "type": "string",
+                      "pattern": "\\S"
+                    }
+                  },
+                  "required": [
+                    "url",
+                    "relation"
+                  ]
+                }
+              },
+              "summary": {
+                "type": "string"
+              },
+              "report": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "archon_artifact"
+                    ]
+                  },
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string",
+                    "enum": [
+                      "triage.md"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "run_id",
+                  "path"
+                ]
+              }
+            },
+            "required": [
+              "decision",
+              "type",
+              "size",
+              "complexity",
+              "importance",
+              "urgency",
+              "item",
+              "area_labels",
+              "related",
+              "summary",
+              "report"
+            ]
+          }
+        }
+      },
+      "triage.verdict": {
+        "source": "triage/archon-triage-block.yaml",
+        "prefix": "triage.",
+        "parent": "triage",
+        "depends": [
+          "triage.triage"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "verdict",
+          "script": "verdict",
+          "runtime": "bun",
+          "depends_on": [
+            "triage"
+          ],
+          "with": {
+            "decision": {
+              "from": "$triage.output.decision"
+            },
+            "type": {
+              "from": "$triage.output.type"
+            },
+            "size": {
+              "from": "$triage.output.size"
+            },
+            "complexity": {
+              "from": "$triage.output.complexity"
+            },
+            "importance": {
+              "from": "$triage.output.importance"
+            },
+            "urgency": {
+              "from": "$triage.output.urgency"
+            },
+            "item": {
+              "from": "$triage.output.item"
+            },
+            "area_labels": {
+              "from": "$triage.output.area_labels"
+            },
+            "related": {
+              "from": "$triage.output.related"
+            },
+            "summary": "$triage.output.summary",
+            "report": {
+              "from": "$triage.output.report"
+            },
+            "publish": "$INPUTS.publish"
+          },
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "contract": {
+                "type": "string",
+                "enum": [
+                  "READY",
+                  "NEEDS_CONTRACT_WORK",
+                  "BLOCKED",
+                  "NO_ACTION"
+                ]
+              },
+              "route": {
+                "type": "string",
+                "enum": [
+                  "investigate",
+                  "plan",
+                  "deliver",
+                  "continue",
+                  "no_action"
+                ]
+              },
+              "pull_request": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "ready": {
+                "type": "boolean"
+              },
+              "type": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "enum": [
+                      "bug",
+                      "feature",
+                      "refactor",
+                      "maintenance",
+                      "docs",
+                      "question"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "value",
+                  "reason"
+                ]
+              },
+              "size": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "enum": [
+                      "s",
+                      "m",
+                      "l"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "value",
+                  "reason"
+                ]
+              },
+              "complexity": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "value",
+                  "reason"
+                ]
+              },
+              "importance": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "value",
+                  "reason"
+                ]
+              },
+              "urgency": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "value": {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "soon",
+                      "now"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "value",
+                  "reason"
+                ]
+              },
+              "labels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "published": {
+                "type": "boolean"
+              },
+              "proposed_edits": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "body": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "title",
+                  "body"
+                ]
+              },
+              "blocked_reason": {
+                "type": "string"
+              },
+              "blocked_by": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "related": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "pattern": "\\S"
+                    },
+                    "relation": {
+                      "type": "string",
+                      "pattern": "\\S"
+                    }
+                  },
+                  "required": [
+                    "url",
+                    "relation"
+                  ]
+                }
+              },
+              "closure": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "duplicate"
+                        ]
+                      },
+                      "url": {
+                        "type": "string",
+                        "pattern": "\\S"
+                      },
+                      "original": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "repo": {
+                            "type": "object",
+                            "properties": {
+                              "host": {
+                                "type": "string",
+                                "pattern": "\\S"
+                              },
+                              "path": {
+                                "type": "string",
+                                "pattern": "\\S"
+                              }
+                            },
+                            "required": [
+                              "host",
+                              "path"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "number": {
+                            "type": "integer",
+                            "minimum": 1
+                          }
+                        },
+                        "required": [
+                          "repo",
+                          "number"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "url",
+                      "original"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "delivered"
+                        ]
+                      },
+                      "url": {
+                        "type": "string",
+                        "pattern": "\\S"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "url"
+                    ]
+                  }
+                ]
+              },
+              "summary": {
+                "type": "string"
+              },
+              "report": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "archon_artifact"
+                    ]
+                  },
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string",
+                    "enum": [
+                      "triage.md"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "run_id",
+                  "path"
+                ]
+              }
+            },
+            "required": [
+              "contract",
+              "route",
+              "pull_request",
+              "ready",
+              "type",
+              "size",
+              "complexity",
+              "importance",
+              "urgency",
+              "labels",
+              "published",
+              "proposed_edits",
+              "blocked_reason",
+              "blocked_by",
+              "closure",
+              "related",
+              "summary",
+              "report"
+            ]
+          }
+        }
+      },
+      "triage": {
+        "source": "ship/archon-ship-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "triage.policy",
+          "triage.triage",
+          "triage.verdict"
+        ],
+        "kind": "include",
+        "node": {
+          "id": "triage",
+          "include": "archon-triage-block",
+          "depends_on": [
+            "forge"
+          ],
+          "with": {
+            "target": "$INPUTS.target",
+            "publish": "$INPUTS.publish"
+          },
+          "child_return": "triage.verdict"
+        }
+      },
+      "inv.investigate": {
+        "source": "investigate/archon-investigate.yaml",
+        "prefix": "inv.",
+        "parent": "inv",
+        "depends": [
+          "triage"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "investigate",
+          "command": "investigate",
+          "mutates_checkout": false,
+          "output_type": "investigation-report",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "rooted",
+                  "refuted",
+                  "inconclusive"
+                ]
+              },
+              "summary": {
+                "type": "string"
+              },
+              "report": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "archon_artifact"
+                    ]
+                  },
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string",
+                    "enum": [
+                      "investigation.md"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "run_id",
+                  "path"
+                ]
+              }
+            },
+            "required": [
+              "verdict",
+              "summary",
+              "report"
+            ]
+          }
+        }
+      },
+      "inv.verdict": {
+        "source": "investigate/archon-investigate.yaml",
+        "prefix": "inv.",
+        "parent": "inv",
+        "depends": [
+          "inv.investigate"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "verdict",
+          "script": "verdict",
+          "runtime": "bun",
+          "depends_on": [
+            "investigate"
+          ],
+          "with": {
+            "verdict": "$investigate.output.verdict",
+            "summary": "$investigate.output.summary",
+            "report": {
+              "from": "$investigate.output.report"
+            }
+          },
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "rooted",
+                  "refuted",
+                  "inconclusive"
+                ]
+              },
+              "rooted": {
+                "type": "boolean"
+              },
+              "summary": {
+                "type": "string"
+              },
+              "report": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "archon_artifact"
+                    ]
+                  },
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string",
+                    "enum": [
+                      "investigation.md"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "run_id",
+                  "path"
+                ]
+              }
+            },
+            "required": [
+              "verdict",
+              "rooted",
+              "summary",
+              "report"
+            ]
+          }
+        }
+      },
+      "inv": {
+        "source": "ship/archon-ship-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "inv.investigate",
+          "inv.verdict"
+        ],
+        "kind": "include",
+        "node": {
+          "id": "inv",
+          "include": "archon-investigate",
+          "with": {
+            "target": "Investigate the unresolved causal question recorded in $ARTIFACTS_DIR/triage.md. Read that assessment first; its confirmed facts are context, while its unknowns are the investigation target."
+          },
+          "depends_on": [
+            "triage"
+          ],
+          "when": "$triage.output.route == 'investigate'",
+          "child_return": "inv.verdict"
+        }
+      },
+      "intel": {
+        "source": "ship/archon-ship-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "triage"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "intel",
+          "command": "intel",
+          "model": "medium",
+          "mutates_checkout": false,
+          "depends_on": [
+            "triage"
+          ],
+          "when": "$triage.output.route == 'plan'"
+        }
+      },
+      "planned.policy": {
+        "source": "plan/archon-plan-block.yaml",
+        "prefix": "planned.",
+        "parent": "planned",
+        "depends": [
+          "triage",
+          "intel"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "policy",
+          "script": "policy",
+          "runtime": "bun",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "defaults": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "defaults"
+            ]
+          }
+        }
+      },
+      "planned.plan": {
+        "source": "plan/archon-plan-block.yaml",
+        "prefix": "planned.",
+        "parent": "planned",
+        "depends": [
+          "planned.policy"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "plan",
+          "command": "plan",
+          "depends_on": [
+            "policy"
+          ],
+          "with": {
+            "policy_defaults": "$policy.output.defaults"
+          },
+          "mutates_checkout": false,
+          "output_type": "implementation-plan",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "ready": {
+                "type": "boolean"
+              },
+              "open_questions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "\\S"
+                }
+              },
+              "summary": {
+                "type": "string"
+              },
+              "report": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "archon_artifact"
+                    ]
+                  },
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string",
+                    "enum": [
+                      "plan.md"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "run_id",
+                  "path"
+                ]
+              }
+            },
+            "required": [
+              "ready",
+              "open_questions",
+              "summary",
+              "report"
+            ]
+          }
+        }
+      },
+      "planned": {
+        "source": "ship/archon-ship-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "planned.policy",
+          "planned.plan"
+        ],
+        "kind": "include",
+        "node": {
+          "id": "planned",
+          "include": "archon-plan-block",
+          "with": {
+            "work": "Plan the current work item from $ARTIFACTS_DIR/triage.md. Read that assessment first, preserve its verified outcome and constraints, and decide the implementation questions it identified. Read $ARTIFACTS_DIR/intel.md too: what usage data says about this work, or why there is none.",
+            "related": "$triage.output.related"
+          },
+          "depends_on": [
+            "triage",
+            "intel"
+          ],
+          "when": "$triage.output.route == 'plan'",
+          "child_return": "planned.plan"
+        }
+      },
+      "continues": {
+        "source": "ship/archon-ship-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "triage"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "continues",
+          "script": "continues",
+          "runtime": "bun",
+          "depends_on": [
+            "triage"
+          ],
+          "with": {
+            "caller": "$INPUTS.pull_request",
+            "triage": {
+              "from": "$triage.output.pull_request"
+            }
+          },
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "pull_request": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "pull_request"
+            ]
+          }
+        }
+      },
+      "deliver": {
+        "source": "ship/archon-ship-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "triage",
+          "continues",
+          "inv",
+          "planned"
+        ],
+        "kind": "delivery",
+        "node": {
+          "id": "deliver",
+          "include": "archon-deliver-block",
+          "with": {
+            "errors": "$INPUTS.errors",
+            "part": "$INPUTS.part",
+            "work": "Deliver the work prepared by this run. Read $ARTIFACTS_DIR/triage.md first. When present, plan.md or investigation.md is the detailed work order and must be read in full; triage.md records which path produced it and which source assumptions were corrected. On the direct route, triage.md itself is the verified work order. When triage.md routes this run to continue an open pull request, the work is to finish that pull request.",
+            "pull_request": "$continues.output.pull_request",
+            "branch": "$INPUTS.branch"
+          },
+          "depends_on": [
+            "triage",
+            "continues",
+            "inv",
+            "planned"
+          ],
+          "trigger_rule": "none_failed_min_one_success",
+          "when": "$triage.output.route == 'deliver' || $triage.output.route == 'continue' || $triage.output.route == 'investigate' && $inv.output.verdict == 'rooted' || $triage.output.route == 'plan' && $planned.output.ready == true"
+        }
+      },
+      "outcome": {
+        "source": "ship/archon-ship-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "triage",
+          "deliver"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "outcome",
+          "script": "outcome",
+          "runtime": "bun",
+          "depends_on": [
+            "triage",
+            "deliver"
+          ],
+          "trigger_rule": "none_failed_min_one_success",
+          "with": {
+            "route": "$triage.output.route",
+            "contract": "$triage.output.contract",
+            "blocked_reason": "$triage.output.blocked_reason",
+            "summary": "$triage.output.summary",
+            "inv_verdict": {
+              "from": "$inv.output.verdict",
+              "if_skipped": null
+            },
+            "inv_summary": {
+              "from": "$inv.output.summary",
+              "if_skipped": null
+            },
+            "plan_summary": {
+              "from": "$planned.output.summary",
+              "if_skipped": null
+            },
+            "open_questions": {
+              "from": "$planned.output.open_questions",
+              "if_skipped": null
+            },
+            "delivered": {
+              "from": "$deliver.output.ready",
+              "if_skipped": null
+            },
+            "delivery": {
+              "from": "$deliver.output.summary",
+              "if_skipped": null
+            },
+            "delivery_reason": {
+              "from": "$deliver.output.reason",
+              "if_skipped": null
+            },
+            "pr_url": {
+              "from": "$deliver.output.pr_url",
+              "if_skipped": null
+            }
+          }
+        }
+      },
+      "report": {
+        "source": "ship/archon-ship-block.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "outcome"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "report",
+          "script": "report",
+          "runtime": "bun",
+          "always_run": true,
+          "depends_on": [
+            "outcome"
+          ],
+          "trigger_rule": "all_done",
+          "with": {
+            "outcome": {
+              "from": "$outcome.output",
+              "if_skipped": null
+            }
+          },
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "delivered": {
+                "type": "boolean"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "pr_url": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "delivered",
+              "reason",
+              "pr_url",
+              "summary"
+            ]
+          }
+        }
+      }
+    },
+    "upkeep": {
+      "forge": {
+        "source": "upkeep/archon-upkeep.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [],
+        "kind": "node",
+        "node": {
+          "id": "forge",
+          "script": "forge-check",
+          "runtime": "bun",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string",
+                "enum": [
+                  "gh",
+                  "forge"
+                ]
+              }
+            },
+            "required": [
+              "source"
+            ]
+          }
+        }
+      },
+      "assess": {
+        "source": "upkeep/archon-upkeep.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "forge"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "assess",
+          "command": "assess",
+          "depends_on": [
+            "forge"
+          ],
+          "mutates_checkout": false,
+          "model": "medium",
+          "output_type": "dependency-assessment",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "update",
+                  "no_action"
+                ]
+              },
+              "summary": {
+                "type": "string"
+              },
+              "report": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "archon_artifact"
+                    ]
+                  },
+                  "run_id": {
+                    "type": "string"
+                  },
+                  "path": {
+                    "type": "string",
+                    "enum": [
+                      "upkeep-assessment.md"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "run_id",
+                  "path"
+                ]
+              }
+            },
+            "required": [
+              "action",
+              "summary",
+              "report"
+            ]
+          }
+        }
+      },
+      "deliver": {
+        "source": "upkeep/archon-upkeep.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "assess"
+        ],
+        "kind": "delivery",
+        "node": {
+          "id": "deliver",
+          "include": "archon-deliver-block",
+          "with": {
+            "errors": "$INPUTS.errors",
+            "work": "Apply the dependency update specified in $ARTIFACTS_DIR/upkeep-assessment.md. Read that file in full first \u2014 it is the verified work order, and you know nothing about this update beyond it and the repository itself. Follow its update order: use the project's own package manager, change the manifest only as the assessment directs, update the lockfile for the target dependency with it, keep churn minimal, and never downgrade anything unrelated. Fix what the bump breaks, check it with the project's own tests for what changed, and if reality contradicts the assessment (version unavailable, an unlisted peer conflict), stop honestly with green false and the contradiction in your summary rather than improvising a different version. Carry the assessment's chosen mechanism, its blast radius, and the alternative it rejected into your report \u2014 the reviewer must be able to judge that trade-off from the pull request. Original request: $INPUTS.target"
+          },
+          "depends_on": [
+            "assess"
+          ],
+          "when": "$assess.output.action == 'update'"
+        }
+      },
+      "outcome": {
+        "source": "upkeep/archon-upkeep.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "assess",
+          "deliver"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "outcome",
+          "script": "outcome",
+          "runtime": "bun",
+          "depends_on": [
+            "assess",
+            "deliver"
+          ],
+          "trigger_rule": "none_failed_min_one_success",
+          "with": {
+            "action": "$assess.output.action",
+            "summary": "$assess.output.summary",
+            "delivered": {
+              "from": "$deliver.output.ready",
+              "if_skipped": null
+            },
+            "delivery": {
+              "from": "$deliver.output.summary",
+              "if_skipped": null
+            },
+            "pr_url": {
+              "from": "$deliver.output.pr_url",
+              "if_skipped": null
+            }
+          },
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "delivered": {
+                "type": "boolean"
+              },
+              "pr_url": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "delivered",
+              "pr_url",
+              "summary"
+            ]
+          }
+        }
+      }
+    },
+    "issue-response": {
+      "classify": {
+        "source": "../examples/proactive-issue-investigation.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [],
+        "kind": "node",
+        "node": {
+          "id": "classify",
+          "model": "small",
+          "prompt": "Read GitHub issue $INPUTS.issue_number in $INPUTS.repository with\n`gh issue view $INPUTS.issue_number --repo $INPUTS.repository --comments`.\n\nDecide whether an engineer should investigate it now. Choose `investigate`\nfor a bug report or regression with enough detail to look into. Choose\n`skip` for questions, feature requests, duplicates, spam, and reports too\nthin to act on. Give a one-sentence reason.\n",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "route": {
+                "type": "string",
+                "enum": [
+                  "investigate",
+                  "skip"
+                ]
+              },
+              "reason": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "route",
+              "reason"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "investigate": {
+        "source": "../examples/proactive-issue-investigation.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "classify"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "investigate",
+          "depends_on": [
+            "classify"
+          ],
+          "when": "$classify.output.route == 'investigate'",
+          "prompt": "Investigate GitHub issue $INPUTS.issue_number in $INPUTS.repository. Read\nit with `gh issue view $INPUTS.issue_number --repo $INPUTS.repository --comments`,\nthen read the code in this checkout to find the likely cause. Do not change\nany files and do not write to GitHub; your draft is reviewed first.\n\nDraft a comment for the issue: what you think the cause is, the files and\nlines involved, and what would confirm it. Say plainly when you are unsure.\n",
+          "output_format": {
+            "type": "object",
+            "properties": {
+              "comment": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "comment"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "review": {
+        "source": "../examples/proactive-issue-investigation.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "investigate"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "review",
+          "depends_on": [
+            "investigate"
+          ],
+          "wait": {
+            "form": "approval",
+            "attention": "Draft comment for $INPUTS.repository#$INPUTS.issue_number\n(classifier: $classify.output.reason). Approve to post it as written;\nreject to drop it.\n\n$investigate.output.comment\n"
+          }
+        }
+      },
+      "drop": {
+        "source": "../examples/proactive-issue-investigation.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "review"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "drop",
+          "depends_on": [
+            "review"
+          ],
+          "when": "$review.output.decision == 'reject'",
+          "cancel": "The draft was rejected; nothing was posted."
+        }
+      },
+      "post": {
+        "source": "../examples/proactive-issue-investigation.yaml",
+        "prefix": "",
+        "parent": null,
+        "depends": [
+          "review"
+        ],
+        "kind": "node",
+        "node": {
+          "id": "post",
+          "depends_on": [
+            "review"
+          ],
+          "when": "$review.output.decision == 'approve'",
+          "bash": "set -euo pipefail\nbody=$investigate.output.comment\ngh issue comment \"$INPUTS_ISSUE_NUMBER\" --repo \"$INPUTS_REPOSITORY\" --body \"$body\"\n"
+        }
+      }
+    }
+  },
+  "extra_hashes": {
+    ".archon/workflows/examples/proactive-issue-investigation.yaml": "7db1484059392cdec703f2736be8fd004a2c0b8d29f1a59ff27146f6ac6736f5"
+  }
+}

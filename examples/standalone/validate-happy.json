@@ -1,0 +1,23 @@
+{
+  "workflow": "validate",
+  "agents": {
+    "discover": {
+      "checks": [
+        {
+          "name": "unit",
+          "argv": [
+            "python",
+            "-c",
+            "print(\"fixture unit passes\")"
+          ],
+          "group": "gate"
+        }
+      ],
+      "notes": "Local fixture checks, no external services."
+    }
+  },
+  "expected": {
+    "green": true,
+    "reason": "completed"
+  }
+}

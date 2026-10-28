@@ -15,7 +15,27 @@ Both use the same pinned Archon prompts, business rules, four-round limit, and l
 
 Delivery starts after work is decided. It does not triage, create an initial product plan, merge, or deploy. Not-ready results ask for a developer's decision. Detailed delivery preserves source behavior as closely as this port supports; it is not proven full runtime/feature parity. Read [the walkthrough](docs/workflow.md) and [limitations](docs/parity.md).
 
-Standalone/composed ports and separate dry workflow variants have been removed. Their earlier versions remain in Git history. The immutable 186-file upstream SDLC pack is retained for relative imports and provenance, not as additional supported DAGU entrypoints.
+Only the two **delivery dry variants** are removed. Other workflow types remain supported with their fixture/live entrypoints. The immutable 186-file upstream SDLC pack is retained for relative imports and provenance, not as additional supported DAGU entrypoints.
+
+## Other workflows
+
+| Family | Workflows | Documentation |
+|---|---|---|
+| Standalone developer steps | Validate, investigate, plan, triage, implement, standup | [Prompts, inputs and examples](docs/standalone.md) |
+| Composed workflows | Review, simplify, PR creation, ship, upkeep, approved issue replies | [Stages, approval and examples](docs/composed.md) |
+
+Each has `*-live.yaml` and `*-fixture.yaml` definitions. There are 27 YAML definitions: 26 public entrypoints plus delivery's shared round child. Only delivery is restricted to real variants; non-delivery fixtures stay available.
+
+All live workflows use OpenCode's `build` profile by default and GitHub CLI directly, without Archon installed. With the built-in standalone/composed config, a saved `make configure-agent MODEL=provider/model` selection is inherited from `config/commands.local.json`. A workflow-specific custom/local config keeps its own explicit agent settings.
+
+```bash
+make standalone-demo WORKFLOW=investigate
+make composed-demo COMPOSED_WORKFLOW=review
+make standalone-scenarios composed-scenarios
+make standalone-native composed-native
+```
+
+These demo/scenario targets mock model and forge effects; the live entrypoints and their required parameters are documented in the guides above.
 
 ## Run delivery
 
@@ -86,15 +106,17 @@ Task exposes the same targets and variables:
 | `setup`, `tools` | Install locked Python dependencies / verified DAGU, Task and Bun |
 | `generate`, `generated-check` | Regenerate workflows, schemas, prompts and config / detect drift |
 | `format`, `lint`, `source-check` | Format, check style, verify upstream hashes |
-| `test`, `parity`, `scenarios` | Contracts, 4096 reducer comparisons, 52 mock-effect scenarios |
-| `validate`, `native-smoke` | Native previews / six actual DAGU executions with mock effects |
+| `test`, `parity`, `scenarios` | Contracts, 4096 reducer comparisons, 52 delivery mock-effect scenarios |
+| `validate`, `native-smoke` | Native previews / six delivery DAGU executions with mock effects |
+| `standalone-demo`, `standalone-scenarios`, `standalone-native` | Standalone fixtures locally / native validation and execution |
+| `composed-demo`, `composed-scenarios`, `composed-native` | Composed fixtures locally / native validation and execution |
 | `fixture-demo`, `demo` | Select `VARIANT`, `CASE`, `EXECUTOR=local` or `dagu` |
 | `ci`, `ci-native` | Credential-free quality suite / native engine suite |
 | `clean` | Remove `.runs/` only |
 
 ## Layout
 
-- `workflows/`: two live entrypoints and their shared round child.
+- `workflows/`: two live delivery entrypoints, their round child, and the restored standalone/composed entrypoints.
 - `src/archon_dagu/`: delivery controller, live/OpenCode integrations, test transport and local harness.
 - `prompts/`: original delivery prompts; `examples/fixtures/`: named mock outcomes.
 - `tests/`, `scripts/`: contracts, generation, parity, examples, tooling and native checks.

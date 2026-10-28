@@ -82,3 +82,10 @@ DAGU is the workflow runtime. Delivery uses the pinned scripts' `gh` path direct
 Existing local configs using this repository's built-in `archon_dagu.live_stage` command map are normalized when loaded: the obsolete `archon` prerequisite and `archon_argv` setting are removed in memory. Your saved `agent_argv`, including model selection, is preserved. Re-running `configure-agent` persists the normalized config. Direct DAGU runs receive the same normalization. Custom command adapters are left unchanged. An explicit `forge_source=forge` is refused for the built-in transport.
 
 Run `make doctor` again after updating. `make agent-smoke` checks only agent prerequisites and does not need `gh` or Archon. It can therefore check provider/model access before full delivery tools are installed. GitHub authentication and repository permissions are checked separately by the original forge preflight/operations.
+
+
+## Standalone and composed workflows
+
+The restored workflows default to OpenCode `build` and the `gh` forge path, with no Archon CLI or service dependency. When launching live with the built-in `config/standalone.json` or `config/composed.json`, they inherit the saved `agent_argv` from `config/commands.local.json` if present. Thus `make configure-agent MODEL=provider/model` also selects the model for these workflows. Fixture runs never inherit this selection or call the agent.
+
+Pass an explicit workflow-specific config (for example `config/standalone.local.json`) to keep separate agent/script settings. Standalone/composed live parameters and side effects are described in [standalone](standalone.md) and [composed](composed.md). `make deliver` still starts only simple/detailed delivery, not these additional entrypoints.
