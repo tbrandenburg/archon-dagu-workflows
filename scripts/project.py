@@ -72,6 +72,11 @@ def native_checks():
 
 
 def example(variant, case, executor):
+    print(
+        "FIXTURE TEST: no agent/model or GitHub operation will run. "
+        "Use make agent-smoke or make deliver for actual agents.",
+        flush=True,
+    )
     if variant not in VARIANTS:
         raise SystemExit("Select simple-real or detailed-real")
     fixture = BASE / "examples/fixtures" / (case + ".json")

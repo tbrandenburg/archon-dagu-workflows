@@ -9,7 +9,9 @@
   "agent_argv": [
     "python",
     "-m",
-    "archon_dagu.opencode"
+    "archon_dagu.opencode",
+    "--agent",
+    "build"
   ],
   "archon_argv": [
     "archon"

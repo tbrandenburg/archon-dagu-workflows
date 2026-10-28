@@ -22,30 +22,36 @@ Standalone/composed ports and separate dry workflow variants have been removed. 
 Requirements: [uv](https://docs.astral.sh/uv/), Python 3.12+, Node.js 24, Bun, DAGU, authenticated Archon/gh, and configured OpenCode/provider credentials. Linux/macOS are supported by the tool installer; use WSL on Windows.
 
 ```bash
-uv sync --frozen
-make tools                         # checksum-verified DAGU, Task and Bun
-cp config/commands.json config/commands.local.json
+make setup tools
+# Install OpenCode using https://opencode.ai/docs/ if it is not already installed.
+opencode auth login
+opencode models
+make configure-agent MODEL=provider/model  # choose an available model; agent defaults to build
+make doctor                               # tool/config check; no model call
+make agent-smoke                          # tiny REAL model call; no delivery/forge stage
 ```
 
-Configure the agent/model and prerequisites in the ignored local config; see [agent setup](docs/agents.md). Use an explicitly isolated Git checkout for live work. The workflow can commit, push, create/update PRs and comments, and change draft status.
+`configure-agent` saves your choice in ignored `config/commands.local.json`; no manual JSON editing is needed. `doctor` shows the exact selected command and explains missing tools. Authentication and model access are checked by `agent-smoke`, not inferred from installed binaries. Alternative agents and advanced settings are documented in [agent setup](docs/agents.md).
+
+Put the accepted task in a text file, then run delivery against an explicitly isolated Git checkout:
 
 ```bash
-uv run .tools/bin/dagu start workflows/simple-real.yaml -- \
-  project_dir="$PWD" \
-  state_dir="/absolute/artifacts/delivery-001" \
-  repo="/absolute/isolated-checkout" \
-  commands="config/commands.local.json" \
-  work="Implement the accepted plan at plans/my-change.md"
+make deliver REPO=/absolute/isolated-checkout WORK_FILE=/absolute/accepted-work.md
+make deliver VARIANT=detailed-real REPO=/absolute/isolated-checkout WORK_FILE=/absolute/accepted-work.md
 ```
 
-Replace `simple-real.yaml` with `detailed-real.yaml` for visible stages and parallel review. Use a unique state directory per run. Supply `pull_request=42` to continue a PR; `branch`, `part`, and `errors` are also forwarded. Inspect the report and any uncertain remote effects before retrying. Neither workflow merges.
+Run one variant per intended delivery. The default is `simple-real`; detailed delivery exposes stages and parallel review. Both invoke actual agents and configured forge operations: they can commit, push, publish PRs/comments, and change draft status. Neither merges. The launcher snapshots the selected config and creates a unique state directory under `.runs/live/`; override it with `STATE_DIR=/absolute/new-run` and select another config with `COMMANDS=/absolute/commands.json`. Existing state directories and `test_transport` configs are refused by the live launcher.
+
+Make and Task accept the same names/variables, for example `.tools/bin/task deliver VARIANT=detailed-real REPO=/absolute/isolated-checkout WORK_FILE=/absolute/accepted-work.md`. Configuration and paths are passed through environment/argv rather than interpolating work text into a shell command.
+
+Direct DAGU operation remains supported. Pass `project_dir`, `state_dir`, `repo`, `commands`, and `work` explicitly as shown in [agent setup](docs/agents.md). Supply `pull_request`, `branch`, `part`, or `errors` directly for advanced operation. Inspect the report and uncertain remote effects before retrying.
 
 ## Examples without external effects
 
-Examples execute those same live definitions with a test-only transport and a disposable local checkout. No model or GitHub operation is invoked; reports carry `simulated: true`. There are no separate dry workflow files.
+`fixture-demo` (and its compatibility alias `demo`) prints an explicit no-agent banner. Examples execute those same live definitions with a test-only transport and a disposable local checkout. No model or GitHub operation is invoked; reports carry `simulated: true`. There are no separate dry workflow files.
 
 ```bash
-make demo                          # simple-real, mocked CI repair, local harness
+make fixture-demo                  # simple-real, mocked CI repair, local harness
 make demo VARIANT=detailed-real CASE=four_round_cap
 make test parity                   # contracts and 4096 reducer comparisons
 make scenarios                     # 52 cases across both live entrypoints
@@ -74,12 +80,13 @@ Task exposes the same targets and variables:
 
 | Make / Task target | Purpose |
 |---|---|
+| `configure-agent`, `doctor`, `agent-smoke`, `deliver` | Save agent/model, check tools, test actual agent, start real delivery |
 | `setup`, `tools` | Install locked Python dependencies / verified DAGU, Task and Bun |
 | `generate`, `generated-check` | Regenerate workflows, schemas, prompts and config / detect drift |
 | `format`, `lint`, `source-check` | Format, check style, verify upstream hashes |
 | `test`, `parity`, `scenarios` | Contracts, 4096 reducer comparisons, 52 mock-effect scenarios |
 | `validate`, `native-smoke` | Native previews / six actual DAGU executions with mock effects |
-| `demo` | Select `VARIANT`, `CASE`, `EXECUTOR=local` or `dagu` |
+| `fixture-demo`, `demo` | Select `VARIANT`, `CASE`, `EXECUTOR=local` or `dagu` |
 | `ci`, `ci-native` | Credential-free quality suite / native engine suite |
 | `clean` | Remove `.runs/` only |
 

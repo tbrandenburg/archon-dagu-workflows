@@ -3,7 +3,9 @@ UV ?= uv
 VARIANT ?= simple-real
 CASE ?= fix_ci
 EXECUTOR ?= local
-.PHONY: help setup tools generate format lint source-check generated-check test parity scenarios validate demo native-smoke ci ci-native clean
+AGENT ?= build
+export VARIANT MODEL AGENT COMMANDS REPO WORK_FILE STATE_DIR
+.PHONY: configure-agent doctor agent-smoke deliver fixture-demo help setup tools generate format lint source-check generated-check test parity scenarios validate demo native-smoke ci ci-native clean
 help: ## List common commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 setup: ## Install locked Python dependencies
@@ -38,3 +40,13 @@ ci: lint source-check generated-check test parity scenarios  ## Run credential-f
 ci-native: validate native-smoke  ## Run native engine checks
 clean: ## Remove run artifacts only
 	$(UV) run python scripts/project.py clean
+
+configure-agent: ## Save OpenCode agent/model selection (MODEL=provider/model AGENT=build)
+	$(UV) run python scripts/operate.py configure-agent
+doctor: ## Check live agent/config/tools without invoking a model
+	$(UV) run python scripts/operate.py doctor
+agent-smoke: ## Invoke the actual agent with a tiny prompt; no delivery/forge stages
+	$(UV) run python scripts/operate.py agent-smoke
+deliver: ## Run REAL delivery (REPO, WORK_FILE, VARIANT); can push/publish
+	$(UV) run python scripts/operate.py deliver
+fixture-demo: demo ## Run mock effects; no agent/model/GitHub calls

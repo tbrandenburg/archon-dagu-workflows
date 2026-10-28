@@ -55,7 +55,7 @@ def test_invalid_or_failed_stream_is_rejected(stream):
 def test_defaults_use_adapter_and_check_opencode_prerequisite():
     for name in ("commands",):
         config = json.loads((BASE / "config" / (name + ".json")).read_text())
-        assert config["agent_argv"] == ["python", "-m", "archon_dagu.opencode"]
+        assert config["agent_argv"] == ["python", "-m", "archon_dagu.opencode", "--agent", "build"]
         assert "opencode" in config.get("agent_requires", config.get("requires", []))
         assert "claude" not in config.get("requires", [])
 
