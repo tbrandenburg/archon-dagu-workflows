@@ -19,7 +19,9 @@ Standalone/composed ports and separate dry workflow variants have been removed. 
 
 ## Run delivery
 
-Requirements: [uv](https://docs.astral.sh/uv/), Python 3.12+, Node.js 24, Bun, DAGU, authenticated Archon/gh, and configured OpenCode/provider credentials. Linux/macOS are supported by the tool installer; use WSL on Windows.
+DAGU runs the workflow, OpenCode runs agent steps, and `gh` handles GitHub operations. No Archon installation is required.
+
+Requirements: [uv](https://docs.astral.sh/uv/), Python 3.12+, Node.js 24, Bun, DAGU, authenticated GitHub CLI (`gh`), and configured OpenCode/provider credentials. Linux/macOS are supported by the tool installer; use WSL on Windows.
 
 ```bash
 make setup tools

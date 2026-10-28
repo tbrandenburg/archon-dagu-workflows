@@ -9,7 +9,7 @@ Run commands from the repository root. `make` or `make help` lists the available
 | Target | What it does |
 |---|---|
 | `make setup` | Install locked Python dependencies with `uv sync --frozen`. Requires uv and Python 3.12+. |
-| `make tools` | Install checksum-verified DAGU, Task and Bun under `.tools/bin`. Does not install OpenCode, Archon, GitHub CLI or provider credentials. |
+| `make tools` | Install checksum-verified DAGU, Task and Bun under `.tools/bin`. Does not install OpenCode, GitHub CLI or provider credentials. Archon is not a runtime dependency. |
 | `make configure-agent MODEL=provider/model AGENT=build` | Create/update ignored `config/commands.local.json` with an explicit OpenCode model and agent profile. Preserves the stage command map and other settings. |
 | `make doctor` | Show the selected configuration/agent command and explain missing executables. Makes no model call and does not verify authentication or tool versions. |
 | `make agent-smoke` | Invoke the actual configured agent with a tiny JSON prompt from a new empty directory. Invokes no delivery or forge stages. This is a real provider call; the no-tools prompt is not a security sandbox. |

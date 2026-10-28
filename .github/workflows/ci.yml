@@ -71,6 +71,10 @@ jobs:
         run: |
           .tools/bin/task --list
           .tools/bin/task lint source-check generated-check test parity
+      - name: Original GitHub preflight without Archon (Bun)
+        run: uv run pytest tests/test_runtime.py
+        env:
+          FORGE_TEST_RUNTIME: bun
       - name: Native previews and actual fixture scheduling
         run: .tools/bin/task ci-native
       - name: Upload native evidence

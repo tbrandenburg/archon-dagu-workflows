@@ -31,3 +31,5 @@ The source contains a stale reporting caveat saying forge review threads are not
 Native engine CI is valuable evidence for orchestration, not proof of a live coding agent's judgments, GitHub behavior, crash recovery or human resume semantics. Further disposable-repository tests are required before unattended live use.
 
 Round exhaustion and other not-ready outcomes are covered by the local command scenarios, including their waiting human task. Native human resume/push-back semantics still need an operator trial. Standalone/composed ports and separate dry workflow variants have been removed; their previous versions remain in Git history.
+
+The DAGU port selects the original GitHub CLI path explicitly. Archon application/CLI/plugin services are not dependencies. Exact upstream prompt files remain unchanged; rendered prompts append DAGU runtime guidance overriding Archon CLI and rerun examples.
