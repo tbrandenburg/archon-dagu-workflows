@@ -64,3 +64,33 @@ tasks:
   clean:
     desc: Remove generated run artifacts only
     cmds: [uv run python scripts/project.py clean]
+
+  configure-agent:
+    desc: Save OpenCode agent/model (MODEL=provider/model AGENT=build)
+    env:
+      MODEL: '{{.MODEL | default ""}}'
+      AGENT: '{{.AGENT | default "build"}}'
+      COMMANDS: '{{.COMMANDS | default ""}}'
+    cmds: [uv run python scripts/operate.py configure-agent]
+  doctor:
+    desc: Check live configuration and tools without invoking a model
+    env:
+      COMMANDS: '{{.COMMANDS | default ""}}'
+    cmds: [uv run python scripts/operate.py doctor]
+  agent-smoke:
+    desc: Invoke actual agent; no delivery or forge stage
+    env:
+      COMMANDS: '{{.COMMANDS | default ""}}'
+    cmds: [uv run python scripts/operate.py agent-smoke]
+  deliver:
+    desc: REAL delivery; can commit, push and publish
+    env:
+      VARIANT: '{{.VARIANT}}'
+      REPO: '{{.REPO | default ""}}'
+      WORK_FILE: '{{.WORK_FILE | default ""}}'
+      STATE_DIR: '{{.STATE_DIR | default ""}}'
+      COMMANDS: '{{.COMMANDS | default ""}}'
+    cmds: [uv run python scripts/operate.py deliver]
+  fixture-demo:
+    desc: Mock effects only; no agent/model/GitHub calls
+    cmds: [{task: demo}]
