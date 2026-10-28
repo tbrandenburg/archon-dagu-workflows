@@ -11,9 +11,9 @@ import subprocess
 import sys
 import uuid
 
-from archon_dagu.engine import BASE, SOURCE
+from archon_dagu.engine import BASE, SOURCE, STAGES
 
-VARIANTS = ("simple-dry", "detailed-dry", "simple-real", "detailed-real")
+VARIANTS = ("simple-real", "detailed-real")
 
 
 def command(*args, **kwargs):
@@ -26,23 +26,12 @@ def source_check():
         actual = hashlib.sha256((SOURCE / path).read_bytes()).hexdigest()
         if actual != expected:
             raise SystemExit(f"Pinned upstream source changed: {path}")
-    extra = json.loads((BASE / "STANDALONE_SOURCE.json").read_text())
-    for path, expected in extra["extra_hashes"].items():
-        actual = hashlib.sha256((BASE / "vendor/archon" / path).read_bytes()).hexdigest()
-        if actual != expected:
-            raise SystemExit("Pinned standalone source changed: " + path)
-    composed = json.loads((BASE / "COMPOSED_SOURCE.json").read_text())
-    for path, expected in composed["extra_hashes"].items():
-        if hashlib.sha256((BASE / "vendor/archon" / path).read_bytes()).hexdigest() != expected:
-            raise SystemExit("Pinned composed source changed: " + path)
     print(f"Verified {len(manifest['hashes'])} pinned upstream files")
 
 
 def generated_check():
     paths = [
         BASE / "SOURCE.json",
-        BASE / "STANDALONE_SOURCE.json",
-        BASE / "COMPOSED_SOURCE.json",
         BASE / "schemas.json",
         BASE / "config/commands.json",
     ]
@@ -83,15 +72,42 @@ def native_checks():
 
 
 def example(variant, case, executor):
-    if variant not in ("simple-dry", "detailed-dry"):
-        raise SystemExit(
-            "Examples only execute dry variants; live runs require explicit operator inputs."
-        )
+    if variant not in VARIANTS:
+        raise SystemExit("Select simple-real or detailed-real")
     fixture = BASE / "examples/fixtures" / (case + ".json")
     if not fixture.is_file():
         raise SystemExit(f"Unknown fixture: {case}")
     state = BASE / ".runs/examples" / f"{variant}-{case}-{uuid.uuid4().hex[:8]}"
-    params = {"project_dir": str(BASE), "state_dir": str(state), "fixture": str(fixture)}
+    repo = state / "mock-checkout"
+    repo.mkdir(parents=True)
+    command("git", "init", "-q", str(repo))
+    config = state / "test-commands.json"
+    config.write_text(
+        json.dumps(
+            {
+                "test_transport": True,
+                "commands": {
+                    s: [sys.executable, "-m", "archon_dagu.mock_stage"]
+                    for s in ["forge", *STAGES[:-1], "update-pr-body"]
+                },
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+    params = {
+        "project_dir": str(BASE),
+        "state_dir": str(state),
+        "fixture": str(fixture),
+        "repo": str(repo),
+        "commands": str(config),
+        "work": "Accepted fixture work; external effects mocked",
+    }
+    if executor == "dagu" and case not in ("ready", "fix_ci", "simplify_then_rereview"):
+        raise SystemExit(
+            "Native examples support ready, fix_ci, simplify_then_rereview; "
+            "not-ready cases reach a real human task. Use EXECUTOR=local for those."
+        )
     if executor == "local":
         from archon_dagu.local_runner import run
 
@@ -109,7 +125,7 @@ def example(variant, case, executor):
         )
     report = json.loads((state / "report.json").read_text())
     expected = "round_cap" if case == "four_round_cap" else "delivered"
-    if report["reason"] != expected or report["merged"]:
+    if report["reason"] != expected or report["merged"] or not report["simulated"]:
         raise SystemExit(f"Unexpected outcome: {report}")
     print(json.dumps({"executor": executor, "report": report, "artifacts": str(state)}, indent=2))
 
@@ -121,8 +137,8 @@ def native_smoke():
         probe.close()
     except OSError as error:
         raise SystemExit(f"Native DAGU execution unavailable on this host: {error}") from error
-    for variant in ("simple-dry", "detailed-dry"):
-        for case in ("ready", "fix_ci", "four_round_cap"):
+    for variant in VARIANTS:
+        for case in ("ready", "fix_ci", "simplify_then_rereview"):
             example(variant, case, "dagu")
 
 
@@ -132,7 +148,7 @@ def main():
         "target",
         choices=["source-check", "generated-check", "validate", "native-smoke", "demo", "clean"],
     )
-    parser.add_argument("--variant", choices=VARIANTS, default="simple-dry")
+    parser.add_argument("--variant", choices=VARIANTS, default="simple-real")
     parser.add_argument("--case", default="fix_ci")
     parser.add_argument("--executor", choices=["local", "dagu"], default="local")
     args = parser.parse_args()

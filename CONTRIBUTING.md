@@ -7,7 +7,7 @@ Before opening a PR:
 ```bash
 make lint source-check generated-check test parity
 make tools
-make scenarios standalone-scenarios composed-scenarios
+make scenarios
 make ci-native
 ```
 
@@ -19,6 +19,4 @@ Tests should exercise decisions, missing evidence, publication identity and fail
 
 For problems, include the selected variant, fixture, tool versions and relevant log. Do not include credentials or private issue/source data. Report sensitive vulnerabilities through GitHub's private reporting options when available.
 
-Standalone stage contracts and operational concessions are documented in [docs/standalone.md](docs/standalone.md). Keep source-derived prompt copies exact. Use an explicit test-only Node config on restricted hosts; never substitute it for Bun/native execution in CI.
-
-See [composed workflows](docs/composed.md) for issue #3 cases and approval behavior. The local harness must refuse native approval gates. Use `COMPOSED_FIXTURE_CONFIG` only for explicit fixture-runtime selection on a restricted host.
+Only `simple-real.yaml` and `detailed-real.yaml` are public delivery entrypoints. `archon-round.yaml` is their detailed-mode helper. Keep examples and CI on these same definitions with explicit mock transports; do not add separate dry workflow variants. Native not-ready runs require a human task, so the unattended native smoke cases must reach readiness. The local harness covers round exhaustion and other not-ready outcomes and verifies they wait for input.

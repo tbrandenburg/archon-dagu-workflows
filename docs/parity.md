@@ -5,7 +5,7 @@ The delivery business rules are based on pinned Archon source. Original prompts,
 | Area | Current implementation |
 |---|---|
 | Business verdicts and four-round cap | Original `round.ts`; 4096 generated decision comparisons |
-| Review, CI, thread corrections and discoveries | Fixture-tested across both shapes and both effect modes |
+| Review, CI, thread corrections and discoveries | Fixture-tested across both live entrypoints with explicit test transports |
 | Independent review | Simple runs selected lenses sequentially; detailed exposes parallel DAGU steps |
 | Models/providers | Configurable fresh CLI calls; not Archon's aliases, usage accounting or full provider layer |
 | Reviewer isolation | Instructions plus after-the-fact checkout checks; not complete preventive sandboxing |
@@ -24,10 +24,10 @@ The source contains a stale reporting caveat saying forge review threads are not
 
 - `test`: fast contracts, typed booleans, original decisions, artifact escape rejection, dry boundary and source integrity.
 - `parity`: 4096 combinations checked against original reducer code.
-- `scenarios`: 26 scenarios × four variants executing the actual YAML commands with a local dependency harness. Real-mode external effects are explicitly mocked and reports are marked simulated.
-- `validate`: actual DAGU binary validates five definitions and previews four entrypoints. Previews do not run stage commands.
-- `native-smoke`: actual DAGU scheduling of simple/detailed dry variants for ready, CI repair and round exhaustion. No local-harness substitution is permitted.
+- `scenarios`: 26 scenarios × two live entrypoints executing the actual YAML commands with a local dependency harness. Real-mode external effects are explicitly mocked and reports are marked simulated.
+- `validate`: actual DAGU binary validates three definitions (two entrypoints plus the shared child) and previews both live entrypoints. Previews do not run stage commands.
+- `native-smoke`: actual DAGU scheduling of the same simple/detailed live entrypoints with mock effects for ready, CI repair and simplify/re-review. No local-harness substitution is permitted.
 
 Native engine CI is valuable evidence for orchestration, not proof of a live coding agent's judgments, GitHub behavior, crash recovery or human resume semantics. Further disposable-repository tests are required before unattended live use.
 
-The six standalone workflows have a separate [fidelity matrix](standalone.md#fidelity-matrix), fixture/live examples, and explicit retry and human-decision concessions.
+Round exhaustion and other not-ready outcomes are covered by the local command scenarios, including their waiting human task. Native human resume/push-back semantics still need an operator trial. Standalone/composed ports and separate dry workflow variants have been removed; their previous versions remain in Git history.

@@ -5,8 +5,6 @@ import pathlib
 import shlex
 
 import yaml
-from generate_composed import generate as generate_composed
-from generate_standalone import generate
 
 B = pathlib.Path(__file__).resolve().parents[1]
 S = B / "vendor/archon/.archon/workflows/sdlc"
@@ -95,7 +93,7 @@ params = [
         ("project_dir", None),
         ("state_dir", None),
         ("repo", ""),
-        ("fixture", "examples/fixtures/ready.json"),
+        ("fixture", ""),  # Only explicit test transports consume a fixture.
         ("commands", "config/commands.json"),
         ("work", ""),
         ("pull_request", ""),
@@ -126,85 +124,80 @@ def write(name, d):
 
 
 for shape in ["simple", "detailed"]:
-    for mode in ["real", "dry"]:
-        steps = [
-            dict(id="check_setup", run=cmd("preflight")),
-            dict(id="start_batch", depends=["check_setup"], run=cmd("init")),
-        ]
-        prev = "start_batch"
-        if shape == "simple":
-            steps.append(dict(id="fix_review_check_loop", depends=[prev], run=cmd("batch")))
-            prev = "fix_review_check_loop"
-        else:
-            for n in range(1, 5):
-                sid = f"round_{n}"
-                steps.append(
-                    dict(
-                        id=sid,
-                        depends=[prev],
-                        action="dag.run",
-                        **{
-                            "with": dict(
-                                dag="archon-round",
-                                params={
-                                    "state_dir": "${params.state_dir}",
-                                    "project_dir": "${params.project_dir}",
-                                },
-                            )
-                        },
-                    )
-                )
-                prev = sid
-        steps.extend(
-            [
-                dict(id="update_description_and_report", depends=[prev], run=cmd("finalize")),
-                dict(
-                    id="read_ready_flag",
-                    depends=["update_description_and_report"],
-                    run=cmd("ready"),
-                    output="READY",
-                ),
-            ]
-        )
-        if mode == "real":
+    mode = "real"
+    steps = [
+        dict(id="check_setup", run=cmd("preflight")),
+        dict(id="start_batch", depends=["check_setup"], run=cmd("init")),
+    ]
+    prev = "start_batch"
+    if shape == "simple":
+        steps.append(dict(id="fix_review_check_loop", depends=[prev], run=cmd("batch")))
+        prev = "fix_review_check_loop"
+    else:
+        for n in range(1, 5):
+            sid = f"round_{n}"
             steps.append(
                 dict(
-                    id="needs_your_input",
-                    depends=["read_ready_flag"],
-                    preconditions=[dict(condition="${READY}", expected="false")],
-                    action="human.task",
+                    id=sid,
+                    depends=[prev],
+                    action="dag.run",
                     **{
                         "with": dict(
-                            prompt="Archon delivery stopped not ready. Read report.json. Complete to leave this result, or request changes to run another capped batch. Merge remains outside this workflow.",
-                            form=dict(type="object", properties={"note": {"type": "string"}}),
-                            push_back=dict(
-                                rewind_to="start_batch",
-                                form=dict(
-                                    type="object",
-                                    properties={"FEEDBACK": {"type": "string"}},
-                                    required=["FEEDBACK"],
-                                ),
-                            ),
+                            dag="archon-round",
+                            params={
+                                "state_dir": "${params.state_dir}",
+                                "project_dir": "${params.project_dir}",
+                            },
                         )
                     },
                 )
             )
-        else:
-            steps.append(
-                dict(id="simulate_attention", depends=["read_ready_flag"], run=cmd("attention"))
-            )
-        write(
-            f"{shape}-{mode}.yaml",
+            prev = sid
+    steps.extend(
+        [
+            dict(id="update_description_and_report", depends=[prev], run=cmd("finalize")),
             dict(
-                type="graph",
-                working_dir="${params.project_dir}",
-                description=f"Archon delivery: {shape} orchestration, {mode} effects; never merges.",
-                params=params,
-                env=env(mode),
-                handler_on={"failure": {"run": cmd("failure")}},
-                steps=steps,
+                id="read_ready_flag",
+                depends=["update_description_and_report"],
+                run=cmd("ready"),
+                output="READY",
             ),
+        ]
+    )
+    steps.append(
+        dict(
+            id="needs_your_input",
+            depends=["read_ready_flag"],
+            preconditions=[dict(condition="${READY}", expected="false")],
+            action="human.task",
+            **{
+                "with": dict(
+                    prompt="Archon delivery stopped not ready. Read report.json. Complete to leave this result, or request changes to run another capped batch. Merge remains outside this workflow.",
+                    form=dict(type="object", properties={"note": {"type": "string"}}),
+                    push_back=dict(
+                        rewind_to="start_batch",
+                        form=dict(
+                            type="object",
+                            properties={"FEEDBACK": {"type": "string"}},
+                            required=["FEEDBACK"],
+                        ),
+                    ),
+                )
+            },
         )
+    )
+    write(
+        f"{shape}-{mode}.yaml",
+        dict(
+            type="graph",
+            working_dir="${params.project_dir}",
+            description=f"Archon delivery: {shape} orchestration, {mode} effects; never merges.",
+            params=params,
+            env=env(mode),
+            handler_on={"failure": {"run": cmd("failure")}},
+            steps=steps,
+        ),
+    )
 steps = []
 for s in ["implement", "pr", "scope", "route"]:
     steps.append(
@@ -238,7 +231,7 @@ write(
         steps=steps,
     ),
 )
-print("4 variants and shared round DAG generated from pinned source")
+print("2 live delivery entrypoints and shared round DAG generated from pinned source")
 stages = [
     "forge",
     "implement",
@@ -269,7 +262,3 @@ config = {
     "commands": {s: ["python", "-m", "archon_dagu.live_stage"] for s in stages},
 }
 (B / "config/commands.json").write_text(json.dumps(config, indent=2) + "\n")
-
-generate()
-
-generate_composed()
