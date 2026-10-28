@@ -12,7 +12,7 @@ import sys
 
 import yaml
 
-from .runtime import RUNTIME_GUIDANCE, github_config, github_env
+from .runtime import RUNTIME_GUIDANCE, github_config, github_env, script_output
 
 B = pathlib.Path(__file__).resolve().parents[2]
 req = json.load(sys.stdin)
@@ -75,7 +75,7 @@ for k, v in inputs.items():
     env["INPUTS_" + k.upper()] = text(v)
 
 
-def script(relative, bindings=None):
+def script(relative, bindings=None, *, output="json"):
     e = {**env, **{"INPUTS_" + k.upper(): text(v) for k, v in (bindings or {}).items()}}
     p = subprocess.run(
         ["bun", str(source / relative)], cwd=repo, env=e, text=True, capture_output=True
@@ -84,7 +84,7 @@ def script(relative, bindings=None):
         print(p.stderr, file=sys.stderr, end="")
     if p.returncode:
         raise RuntimeError(p.stderr or relative + " failed")
-    return json.loads(p.stdout)
+    return script_output(p.stdout, json_output=output == "json")
 
 
 def schema_for(folder, filename, node):
@@ -275,7 +275,7 @@ elif stage in ["review", "rereview"]:
             readonly=True,
         )
     finally:
-        script("review/scripts/prune-scratch.ts", {"lens": ""})
+        script("review/scripts/prune-scratch.ts", {"lens": ""}, output="text")
 elif stage in ["publish-review", "publish-rereview"]:
     verdict = out["review" if stage == "publish-review" else "rereview"]
     scope = out["scope"]
@@ -301,7 +301,7 @@ elif stage == "simplify":
             "simplify", schema_for("simplify", "archon-simplify.yaml", "simplify"), readonly=True
         )
     finally:
-        script("simplify/scripts/prune-scratch.ts", {"lens": "simplify"})
+        script("simplify/scripts/prune-scratch.ts", {"lens": "simplify"}, output="text")
 elif stage == "settle-threads":
     result = checked_agent(
         "settle-threads",

@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 
@@ -56,7 +57,16 @@ def main():
     # stdin avoids command-line size limits and exposes no prompt in process argv.
     # Inherit the caller's cwd, environment and process group for cancellation.
     try:
-        result = subprocess.run(command, input=sys.stdin.read(), text=True, stdout=subprocess.PIPE)
+        cwd = os.getcwd()
+        env = {**os.environ, "PWD": cwd}
+        result = subprocess.run(
+            command,
+            input=sys.stdin.read(),
+            text=True,
+            stdout=subprocess.PIPE,
+            cwd=cwd,
+            env=env,
+        )
         if result.returncode:
             raise ValueError(f"OpenCode exited with status {result.returncode}")
         answer = final_answer(result.stdout)
