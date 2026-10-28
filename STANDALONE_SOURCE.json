@@ -1,0 +1,131 @@
+{
+  "repository": "coleam00/Archon",
+  "commit": "72817c50dc51bb91773f71e5448bb7d387bfc8dd",
+  "workflows": {
+    "validate": {
+      "source": ".archon/workflows/sdlc/validate/archon-validate.yaml",
+      "mapping": [
+        {
+          "source_node": "discover",
+          "kind": "command",
+          "prompt": "prompts/standalone/validate-discover.md"
+        },
+        {
+          "source_node": "run",
+          "kind": "script",
+          "prompt": null
+        },
+        {
+          "source_node": "classify",
+          "kind": "command",
+          "prompt": "prompts/standalone/validate-classify.md"
+        },
+        {
+          "source_node": "result",
+          "kind": "script",
+          "prompt": null
+        }
+      ]
+    },
+    "investigate": {
+      "source": ".archon/workflows/sdlc/investigate/archon-investigate.yaml",
+      "mapping": [
+        {
+          "source_node": "investigate",
+          "kind": "command",
+          "prompt": "prompts/standalone/investigate-investigate.md"
+        },
+        {
+          "source_node": "verdict",
+          "kind": "script",
+          "prompt": null
+        }
+      ]
+    },
+    "plan": {
+      "source": ".archon/workflows/sdlc/plan/archon-plan-block.yaml",
+      "mapping": [
+        {
+          "source_node": "policy",
+          "kind": "script",
+          "prompt": null
+        },
+        {
+          "source_node": "plan",
+          "kind": "command",
+          "prompt": "prompts/standalone/plan-plan.md"
+        }
+      ]
+    },
+    "triage": {
+      "source": ".archon/workflows/sdlc/triage/archon-triage-block.yaml",
+      "mapping": [
+        {
+          "source_node": "policy",
+          "kind": "script",
+          "prompt": null
+        },
+        {
+          "source_node": "triage",
+          "kind": "command",
+          "prompt": "prompts/standalone/triage-triage.md"
+        },
+        {
+          "source_node": "verdict",
+          "kind": "script",
+          "prompt": null
+        }
+      ]
+    },
+    "implement": {
+      "source": ".archon/workflows/sdlc/implement/archon-implement.yaml",
+      "mapping": [
+        {
+          "source_node": "implement",
+          "kind": "loop",
+          "prompt": "prompts/standalone/implement-implement.md"
+        }
+      ]
+    },
+    "standup": {
+      "source": ".archon/workflows/maintainer/maintainer-standup.yaml",
+      "mapping": [
+        {
+          "source_node": "git-status",
+          "kind": "script",
+          "prompt": null
+        },
+        {
+          "source_node": "gh-data",
+          "kind": "script",
+          "prompt": null
+        },
+        {
+          "source_node": "read-context",
+          "kind": "script",
+          "prompt": null
+        },
+        {
+          "source_node": "synthesize",
+          "kind": "command",
+          "prompt": "prompts/standalone/standup-synthesize.md"
+        },
+        {
+          "source_node": "persist",
+          "kind": "bash",
+          "prompt": null
+        }
+      ]
+    }
+  },
+  "extra_hashes": {
+    ".archon/commands/maintainer-standup.md": "2b36c22ec948a402f4b58a1fc14ca084b7f4f8e629c8240ce57bf17e219bc8df",
+    ".archon/maintainer-standup/README.md": "d7fa2248d76e3cbc6ffc6d88264d9eef47f789315cfb45b3df1ea015eaad5dec",
+    ".archon/maintainer-standup/profile.md.example": "96e8cf36e2af1d14eb14828902cfe24d0ffab2f9582cfadc25548bacbdf04a01",
+    ".archon/scripts/maintainer-standup-gh-data.ts": "bc734590229f4c30bb61bc6d14395dcd4a62d415f9df8ed2b6217a681be36f70",
+    ".archon/scripts/maintainer-standup-git-status.ts": "56e7b98344464dd777cbf48ef0e836d75a6dddd3c16b7f057f699576d010b355",
+    ".archon/scripts/maintainer-standup-persist.ts": "f9b398ff391605927193e2b16cf57ca5e5d01bf1bb97b528f961255af4bc86bb",
+    ".archon/scripts/maintainer-standup-read-context.ts": "e4a05c7c57d8c88889e1a8fb5a19dcb006c3b6760ac21e13e9e5e876ee6b5f21",
+    ".archon/workflows/maintainer/maintainer-standup.yaml": "20e5a149a115b0a47f54e46fd37f39ecb9ec339c12f90e6afac040c51abbcbaa"
+  }
+}

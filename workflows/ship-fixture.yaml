@@ -1,0 +1,179 @@
+type: graph
+description: Source-backed Archon ship; fixture. See docs/composed.md.
+working_dir: ${params.project_dir}
+params:
+- name: project_dir
+  type: string
+- name: state_dir
+  type: string
+- name: repo
+  type: string
+  default: ''
+- name: input
+  type: string
+  default: ''
+- name: scope
+  type: string
+  default: ''
+- name: prior_report
+  type: string
+  default: ''
+- name: light
+  type: string
+  default: 'false'
+- name: part
+  type: string
+  default: ''
+- name: errors
+  type: string
+  default: auto
+- name: publish
+  type: string
+  default: 'false'
+- name: pull_request
+  type: string
+  default: ''
+- name: branch
+  type: string
+  default: ''
+- name: draft
+  type: string
+  default: 'true'
+- name: publish_description
+  type: string
+  default: 'false'
+- name: base_branch
+  type: string
+  default: main
+- name: repository
+  type: string
+  default: ''
+- name: issue_number
+  type: string
+  default: ''
+- name: fixture
+  type: string
+  default: examples/composed/ship-happy.json
+- name: config
+  type: string
+  default: config/composed.json
+env:
+  STANDALONE_WORKFLOW: ship
+  STANDALONE_MODE: fixture
+  STATE_DIR: ${params.state_dir}
+  TARGET_REPO: ${params.repo}
+  WORK_INPUT: ${params.input}
+  SCOPE: ${params.scope}
+  PRIOR_REPORT: ${params.prior_report}
+  PUBLISH: ${params.publish}
+  STANDALONE_FIXTURE: ${params.fixture}
+  STANDALONE_CONFIG: ${params.config}
+  COMPOSED_LIGHT: ${params.light}
+  COMPOSED_PART: ${params.part}
+  COMPOSED_ERRORS: ${params.errors}
+  COMPOSED_PULL_REQUEST: ${params.pull_request}
+  COMPOSED_BRANCH: ${params.branch}
+  COMPOSED_DRAFT: ${params.draft}
+  COMPOSED_PUBLISH_DESCRIPTION: ${params.publish_description}
+  COMPOSED_BASE_BRANCH: ${params.base_branch}
+  COMPOSED_REPOSITORY: ${params.repository}
+  COMPOSED_ISSUE_NUMBER: ${params.issue_number}
+handler_on:
+  failure:
+    run: python -m archon_dagu.composed failure
+steps:
+- id: setup
+  run: python -m archon_dagu.composed init
+- id: forge
+  depends:
+  - setup
+  run: python -m archon_dagu.composed stage forge
+- id: triage__policy
+  depends:
+  - forge
+  run: python -m archon_dagu.composed stage triage.policy
+- id: triage__triage
+  depends:
+  - triage__policy
+  run: python -m archon_dagu.composed stage triage.triage
+- id: triage__verdict
+  depends:
+  - triage__triage
+  run: python -m archon_dagu.composed stage triage.verdict
+- id: triage
+  depends:
+  - triage__policy
+  - triage__triage
+  - triage__verdict
+  run: python -m archon_dagu.composed stage triage
+- id: inv__investigate
+  depends:
+  - triage
+  run: python -m archon_dagu.composed stage inv.investigate
+- id: inv__verdict
+  depends:
+  - inv__investigate
+  run: python -m archon_dagu.composed stage inv.verdict
+- id: inv
+  depends:
+  - inv__investigate
+  - inv__verdict
+  run: python -m archon_dagu.composed stage inv
+- id: intel
+  depends:
+  - triage
+  run: python -m archon_dagu.composed stage intel
+- id: planned__policy
+  depends:
+  - triage
+  - intel
+  run: python -m archon_dagu.composed stage planned.policy
+- id: planned__plan
+  depends:
+  - planned__policy
+  run: python -m archon_dagu.composed stage planned.plan
+- id: planned
+  depends:
+  - planned__policy
+  - planned__plan
+  run: python -m archon_dagu.composed stage planned
+- id: continues
+  depends:
+  - triage
+  run: python -m archon_dagu.composed stage continues
+- id: deliver
+  depends:
+  - triage
+  - continues
+  - inv
+  - planned
+  run: python -m archon_dagu.composed stage deliver
+- id: outcome
+  depends:
+  - triage
+  - deliver
+  run: python -m archon_dagu.composed stage outcome
+- id: report
+  depends:
+  - outcome
+  run: python -m archon_dagu.composed stage report
+- id: finish
+  depends:
+  - forge
+  - triage__policy
+  - triage__triage
+  - triage__verdict
+  - triage
+  - inv__investigate
+  - inv__verdict
+  - inv
+  - intel
+  - planned__policy
+  - planned__plan
+  - planned
+  - continues
+  - deliver
+  - outcome
+  - report
+  run: python -m archon_dagu.composed report
+  output: NEEDS_DECISION

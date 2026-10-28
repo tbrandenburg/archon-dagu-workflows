@@ -34,7 +34,17 @@ def test_only_root_real_workflows_ask_for_human_input():
     for file in (BASE / "workflows").glob("*.yaml"):
         data = yaml.safe_load(file.read_text())
         tasks = [s for s in data["steps"] if s.get("action") == "human.task"]
-        asks = file.stem in {"simple-real", "detailed-real"}
+        asks = file.stem in {
+            "simple-real",
+            "detailed-real",
+            "plan-live",
+            "triage-live",
+            "investigate-live",
+            "implement-live",
+            "review-live",
+            "ship-live",
+            "upkeep-live",
+        }
         assert len(tasks) == (1 if asks else 0)
 
 
@@ -43,9 +53,26 @@ def test_manifest_has_canonical_file_order():
     assert list(manifest["hashes"]) == sorted(manifest["hashes"])
 
 
-def test_only_live_delivery_entrypoints_and_required_child_remain():
+def test_delivery_has_only_real_entrypoints_and_other_workflows_remain():
     files = {p.name for p in (BASE / "workflows").glob("*.yaml")}
-    assert files == {"simple-real.yaml", "detailed-real.yaml", "archon-round.yaml"}
+    names = {
+        "validate",
+        "investigate",
+        "plan",
+        "triage",
+        "implement",
+        "standup",
+        "review",
+        "simplify",
+        "pr",
+        "ship",
+        "upkeep",
+        "issue-response",
+    }
+    expected = {"simple-real.yaml", "detailed-real.yaml", "archon-round.yaml"}
+    expected.update(f"{name}-{mode}.yaml" for name in names for mode in ("fixture", "live"))
+    assert files == expected
+    assert not {"simple-dry.yaml", "detailed-dry.yaml"} & files
     for name in ("simple-real", "detailed-real"):
         data = yaml.safe_load((BASE / "workflows" / (name + ".yaml")).read_text())
         assert data["env"]["PORT_MODE"] == "real"

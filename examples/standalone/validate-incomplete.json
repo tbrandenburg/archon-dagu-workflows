@@ -1,0 +1,21 @@
+{
+  "workflow": "validate",
+  "agents": {
+    "discover": {
+      "checks": [
+        {
+          "name": "missing",
+          "argv": [
+            "archon-dagu-nonexistent-check-binary"
+          ],
+          "group": "gate"
+        }
+      ],
+      "notes": "Local fixture checks, no external services."
+    }
+  },
+  "expected": {
+    "green": false,
+    "red_cause": "incomplete"
+  }
+}

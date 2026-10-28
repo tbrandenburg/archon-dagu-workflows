@@ -1,0 +1,55 @@
+{
+  "workflow": "pr",
+  "agents": {
+    "prepare": {
+      "repo": {
+        "host": "github.com",
+        "path": "example/repo"
+      },
+      "head_repo": {
+        "host": "github.com",
+        "path": "example/repo"
+      },
+      "head": "feature",
+      "base": "main",
+      "existing": null,
+      "title": "Fixture change",
+      "body": {
+        "type": "archon_artifact",
+        "run_id": "$RUN_ID",
+        "path": "pr-body.md"
+      },
+      "description": null,
+      "summary": "Fixture publication intent."
+    }
+  },
+  "artifacts": {
+    "prepare": {
+      "pr-body.md": "# Fixture PR\nAccepted outcome and validation.\n"
+    }
+  },
+  "publish": {
+    "schemaVersion": 1,
+    "repo": {
+      "host": "github.com",
+      "path": "example/repo"
+    },
+    "number": 42,
+    "url": "https://github.com/example/repo/pull/42",
+    "head": "feature",
+    "base": "main",
+    "is_draft": true,
+    "state": "open",
+    "head_repo": {
+      "host": "github.com",
+      "path": "example/repo"
+    },
+    "head_revision": "fixture-head",
+    "base_revision": "fixture-base",
+    "maintainer_can_modify": true
+  },
+  "publication": "failed",
+  "expected": {
+    "failure": true
+  }
+}

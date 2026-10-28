@@ -1,0 +1,42 @@
+{
+  "workflow": "implement",
+  "agents": {
+    "implement_1": {
+      "done": false,
+      "green": false,
+      "red_cause": "incomplete",
+      "summary": "Fixture implementation turn 1"
+    },
+    "implement_2": {
+      "done": false,
+      "green": false,
+      "red_cause": "incomplete",
+      "summary": "Fixture implementation turn 2"
+    },
+    "implement_3": {
+      "done": false,
+      "green": false,
+      "red_cause": "incomplete",
+      "summary": "Fixture implementation turn 3"
+    },
+    "implement_4": {
+      "done": false,
+      "green": false,
+      "red_cause": "incomplete",
+      "summary": "Fixture implementation turn 4"
+    },
+    "implement_5": {
+      "done": true,
+      "green": true,
+      "red_cause": "",
+      "summary": "Fixture implementation turn 5"
+    }
+  },
+  "artifacts": {
+    "implementation.md": "# Implementation\nFixture focused checks and next-session handoff.\n"
+  },
+  "expected": {
+    "outcome": true,
+    "reason": "completed"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "workflow": "implement",
+  "agents": {
+    "implement_1": {
+      "done": true,
+      "green": true,
+      "red_cause": "",
+      "summary": "Fixture implementation turn 1"
+    }
+  },
+  "artifacts": {
+    "implementation.md": "# Implementation\nFixture focused checks and next-session handoff.\n"
+  },
+  "expected": {
+    "failure": true
+  },
+  "fail": [
+    "implement_1"
+  ]
+}
