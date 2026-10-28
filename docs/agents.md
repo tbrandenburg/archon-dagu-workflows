@@ -73,3 +73,12 @@ uv run .tools/bin/dagu start workflows/detailed-real.yaml -- \
 ```
 
 The shortcuts do not change the original delivery state machine. Fake issue text alone does not disable public forge operations.
+
+
+## GitHub without Archon
+
+DAGU is the workflow runtime. Delivery uses the pinned scripts' `gh` path directly; no Archon CLI, server, account or forge plugin is required. Runtime configuration sets `forge_source` to `gh` and ignores inherited `ARCHON_SDLC_FORGE=forge` / `ARCHON_CLI_COMMAND` settings. The Archon-named environment keys retained by the source scripts are compatibility bindings, not a service dependency.
+
+Existing local configs using this repository's built-in `archon_dagu.live_stage` command map are normalized when loaded: the obsolete `archon` prerequisite and `archon_argv` setting are removed in memory. Your saved `agent_argv`, including model selection, is preserved. Re-running `configure-agent` persists the normalized config. Direct DAGU runs receive the same normalization. Custom command adapters are left unchanged. An explicit `forge_source=forge` is refused for the built-in transport.
+
+Run `make doctor` again after updating. `make agent-smoke` checks only agent prerequisites and does not need `gh` or Archon. It can therefore check provider/model access before full delivery tools are installed. GitHub authentication and repository permissions are checked separately by the original forge preflight/operations.

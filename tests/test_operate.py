@@ -117,3 +117,18 @@ def test_make_forwards_arbitrary_model_as_environment(tmp_path):
     )
     assert value in result.stdout
     assert not (BASE / "should-not-exist").exists()
+
+
+def test_doctor_migrates_existing_local_config_without_losing_model(tmp_path, monkeypatch):
+    path = tmp_path / "commands.json"
+    config = json.loads((BASE / "config/commands.json").read_text())
+    config["requires"].append("archon")
+    config["archon_argv"] = ["archon"]
+    config["agent_argv"] += ["--model", "openai/example"]
+    path.write_text(json.dumps(config))
+    monkeypatch.setattr(operate.shutil, "which", lambda name: None if name == "archon" else name)
+    _, selected = operate.doctor(path)
+    assert selected["agent_argv"] == config["agent_argv"]
+    assert "archon" not in selected["requires"]
+    # This read-only command leaves ignored user config intact.
+    assert json.loads(path.read_text()) == config

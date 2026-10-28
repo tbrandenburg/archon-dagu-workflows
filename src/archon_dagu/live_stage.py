@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Live integration: pinned Archon scripts + configured fresh agent CLI.
-Requires Bun, Archon/forge setup and a noninteractive agent command returning JSON.
+Requires Bun, authenticated GitHub CLI and an agent command returning JSON.
 This integration is experimental until validated on the operator's disposable repo.
 """
 
@@ -12,6 +12,8 @@ import sys
 
 import yaml
 
+from .runtime import RUNTIME_GUIDANCE, github_config, github_env
+
 B = pathlib.Path(__file__).resolve().parents[2]
 req = json.load(sys.stdin)
 ctx = req["context"]
@@ -22,7 +24,7 @@ out = req["outputs"]
 prev = req["previous"]
 repo = ctx["repo"]
 n = req["round"]
-config = ctx["command_config"]
+config = github_config(ctx["command_config"])
 agent = config["agent_argv"]
 runid = root.name
 
@@ -44,13 +46,14 @@ def execution(name):
 
 
 env = {
-    **os.environ,
+    **github_env(os.environ),
     "ARTIFACTS_DIR": str(root),
     "WORKFLOW_ID": runid,
-    "ARCHON_CLI_COMMAND": json.dumps(config.get("archon_argv", ["archon"])),
     "ARCHON_NODE_EXECUTION": json.dumps(execution(stage)),
 }
 forge = json.loads((root / "forge.json").read_text()) if (root / "forge.json").exists() else {}
+if forge.get("source", "gh") != "gh":
+    raise ValueError("This run selected an Archon forge plugin; start a new DAGU/gh run")
 inputs = {
     "work": ctx["work"],
     "work_order": ctx["work"],
@@ -96,7 +99,7 @@ def checked_agent(prompt_name, schema=None, extra=None, readonly=False):
         "$ARTIFACTS_DIR": str(root),
         "$WORKFLOW_ID": runid,
         "$ARGUMENTS": ctx["work"],
-        "$ARCHON_CLI_COMMAND": env["ARCHON_CLI_COMMAND"],
+        "$ARCHON_CLI_COMMAND": "[]",
         "$TYPED_ARTIFACTS_FILE": str(root / f"typed-{n}.json"),
         "$LOOP_PREV_OUTPUT": text(out.get("previous_turn", "")),
     }
@@ -109,6 +112,7 @@ def checked_agent(prompt_name, schema=None, extra=None, readonly=False):
         values.update(extra)
     for k in sorted(values, key=len, reverse=True):
         p = p.replace(k, values[k])
+    p += RUNTIME_GUIDANCE
     p += "\n\nDAGU stage context (authoritative bound inputs):\n" + json.dumps(
         {
             "inputs": inputs,

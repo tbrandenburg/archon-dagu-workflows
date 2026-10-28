@@ -13,6 +13,8 @@ import shutil
 import subprocess
 import tempfile
 
+from .runtime import github_config
+
 BASE = pathlib.Path(__file__).resolve().parents[2]
 SOURCE = BASE / "vendor/archon/.archon/workflows/sdlc"
 STAGES = [
@@ -245,6 +247,7 @@ def preflight():
         return
     path = pathlib.Path(os.environ["STAGE_COMMANDS"])
     cfg = load(path)
+    cfg = github_config(cfg) if cfg else None
     if not cfg or not isinstance(cfg.get("commands"), dict):
         raise RuntimeError("Live stage commands are not configured: " + str(path))
     for executable in cfg.get("requires", []):
@@ -334,6 +337,7 @@ def initialize(root):
         if mode == "real"
         else {}
     )
+    cfg = github_config(cfg)
     if mode == "real" and not cfg.get("commands"):
         raise RuntimeError("Live mode has no stage commands; refusing execution")
     repo = str(pathlib.Path(os.environ.get("TARGET_REPO", ".")).resolve())

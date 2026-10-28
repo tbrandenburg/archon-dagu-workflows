@@ -12,6 +12,7 @@ import sys
 import uuid
 
 from archon_dagu.engine import BASE, load, save
+from archon_dagu.runtime import github_config
 
 VARIANTS = ("simple-real", "detailed-real")
 
@@ -26,7 +27,7 @@ def configuration(path):
     if not path.exists() and path != BASE / "config/commands.local.json":
         raise ValueError(f"Selected config does not exist: {path}")
     selected = path if path.exists() else BASE / "config/commands.json"
-    config = load(selected)
+    config = github_config(load(selected))
     if config.get("test_transport"):
         raise ValueError("Live commands refuse test_transport; use fixture-demo for mock effects")
     argv = config.get("agent_argv")
@@ -58,6 +59,8 @@ def configure(path, model, agent):
 def doctor(path, *, agent_only=False):
     selected, config = configuration(path)
     argv = config["agent_argv"]
+    if config.get("forge_source") == "gh" and not agent_only:
+        print("Runtime: DAGU; forge: GitHub CLI (gh). Archon installation is not required.")
     print(f"Config: {selected}\nAgent command: {shlex.join(argv)}", flush=True)
     needed = [argv[0]]
     if "archon_dagu.opencode" in argv:
@@ -77,7 +80,6 @@ def doctor(path, *, agent_only=False):
             "bun": "run make tools",
             "dagu": "run make tools",
             "gh": "install GitHub CLI, then gh auth login",
-            "archon": "install/configure Archon CLI required by the pinned forge scripts",
             "node": "install Node.js 24",
         }.get(name, "install it or correct the selected command config")
         print(f"Missing {name}: {hint}", file=sys.stderr)

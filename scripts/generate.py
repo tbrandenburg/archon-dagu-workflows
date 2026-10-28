@@ -256,9 +256,9 @@ stages = [
 ]
 config = {
     "description": "Experimental live integration: pinned Archon scripts and configured fresh agent CLI; no merge",
-    "requires": ["bun", "archon", "gh", "opencode"],
+    "requires": ["bun", "gh", "opencode"],
+    "forge_source": "gh",
     "agent_argv": ["python", "-m", "archon_dagu.opencode", "--agent", "build"],
-    "archon_argv": ["archon"],
     "commands": {s: ["python", "-m", "archon_dagu.live_stage"] for s in stages},
 }
 (B / "config/commands.json").write_text(json.dumps(config, indent=2) + "\n")
