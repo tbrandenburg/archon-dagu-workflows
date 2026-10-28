@@ -1,6 +1,7 @@
 """DAGU runtime settings for the pinned scripts' native GitHub CLI path."""
 
 import copy
+import json
 
 
 def github_config(config):
@@ -28,6 +29,15 @@ def github_env(environ):
     env["ARCHON_SDLC_FORGE"] = "gh"
     env.pop("ARCHON_CLI_COMMAND", None)
     return env
+
+
+def script_output(stdout, *, json_output=True):
+    """Parse a pinned script's declared JSON result or preserve its text report."""
+    if not json_output:
+        if not stdout.strip():
+            raise ValueError("Live stage script emitted no text report")
+        return stdout
+    return json.loads(stdout)
 
 
 RUNTIME_GUIDANCE = """

@@ -69,7 +69,7 @@ def test_cli_preserves_stdin_cwd_flags_and_failure(tmp_path, failure):
         "import json, os, sys\n"
         "from pathlib import Path\n"
         "Path(os.environ['RECORD']).write_text(json.dumps(\n"
-        " {'argv':sys.argv[1:], 'stdin':sys.stdin.read(), 'cwd':os.getcwd()}))\n"
+        " {'argv':sys.argv[1:], 'stdin':sys.stdin.read(), 'cwd':os.getcwd(), 'pwd':os.environ.get('PWD')}))\n"
         "print(json.dumps({'type':'text','part':{'messageID':'answer',"
         " 'text':'{\\\"ready\\\":true}'}}))\n"
         "if os.environ['FAILURE']=='event': print(json.dumps({'type':'error'}))\n"
@@ -116,6 +116,7 @@ def test_cli_preserves_stdin_cwd_flags_and_failure(tmp_path, failure):
         ],
         "stdin": prompt,
         "cwd": str(tmp_path),
+        "pwd": str(tmp_path),
     }
     assert not (tmp_path / "should-not-exist").exists()
     if failure:

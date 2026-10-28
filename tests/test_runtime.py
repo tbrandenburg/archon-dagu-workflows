@@ -8,7 +8,15 @@ import sys
 import pytest
 
 from archon_dagu.engine import BASE, preflight
-from archon_dagu.runtime import github_config, github_env
+from archon_dagu.runtime import github_config, github_env, script_output
+
+
+def test_script_output_supports_json_and_plain_text_reports():
+    assert script_output('{"source":"gh"}') == {"source": "gh"}
+    report = "prune-scratch: removed 0 scratch worktree(s)\n"
+    assert script_output(report, json_output=False) == report
+    with pytest.raises(ValueError, match="no text report"):
+        script_output("", json_output=False)
 
 
 def legacy():
