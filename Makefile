@@ -1,5 +1,6 @@
 .DEFAULT_GOAL := help
 UV ?= uv
+CONFIGURE_AGENT = $(if $(filter command line,$(origin OPENCODE_AGENT)),$(OPENCODE_AGENT),$(if $(filter command line,$(origin AGENT)),$(AGENT),build))
 VARIANT ?= simple-real
 CASE ?= fix_ci
 EXECUTOR ?= local
@@ -42,7 +43,7 @@ clean: ## Remove run artifacts only
 	$(UV) run python scripts/project.py clean
 
 configure-agent: ## Save OpenCode agent/model selection (MODEL=provider/model AGENT=build)
-	$(UV) run python scripts/operate.py configure-agent
+	AGENT='$(CONFIGURE_AGENT)' $(UV) run python scripts/operate.py configure-agent
 doctor: ## Check live agent/config/tools without invoking a model
 	$(UV) run python scripts/operate.py doctor
 agent-smoke: ## Invoke the actual agent with a tiny prompt; no delivery/forge stages

@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 
@@ -103,20 +104,55 @@ def test_delivery_uses_selected_config_and_literal_work_file(tmp_path, monkeypat
         operate.deliver(selected, "detailed-real", str(tmp_path), str(work), str(state))
 
 
-def test_make_forwards_arbitrary_model_as_environment(tmp_path):
+def test_make_defaults_agent_and_forwards_explicit_model_and_agent(tmp_path):
     fake = tmp_path / "uv"
-    fake.write_text(f"#!{sys.executable}\nimport os; print(os.environ['MODEL'])\n")
+    fake.write_text(
+        f"#!{sys.executable}\nimport os; print(os.environ['MODEL'] + '|' + os.environ['AGENT'])\n"
+    )
     fake.chmod(0o755)
     value = "provider/model';touch should-not-exist;'"
     result = subprocess.run(
         ["make", "configure-agent", "UV=" + str(fake), "MODEL=" + value],
         cwd=BASE,
+        env={"PATH": os.environ["PATH"], "AGENT": "1"},
         capture_output=True,
         text=True,
         check=True,
     )
-    assert value in result.stdout
+    assert value + "|build" in result.stdout
     assert not (BASE / "should-not-exist").exists()
+
+    explicit = subprocess.run(
+        [
+            "make",
+            "configure-agent",
+            "UV=" + str(fake),
+            "MODEL=provider/model",
+            "AGENT=plan",
+        ],
+        cwd=BASE,
+        env={"PATH": os.environ["PATH"], "AGENT": "1"},
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "provider/model|plan" in explicit.stdout
+
+    named = subprocess.run(
+        [
+            "make",
+            "configure-agent",
+            "UV=" + str(fake),
+            "MODEL=provider/model",
+            "OPENCODE_AGENT=review",
+        ],
+        cwd=BASE,
+        env={"PATH": os.environ["PATH"], "AGENT": "1"},
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "provider/model|review" in named.stdout
 
 
 def test_doctor_migrates_existing_local_config_without_losing_model(tmp_path, monkeypatch):

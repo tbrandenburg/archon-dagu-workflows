@@ -66,12 +66,12 @@ tasks:
     cmds: [uv run python scripts/project.py clean]
 
   configure-agent:
-    desc: Save OpenCode agent/model (MODEL=provider/model AGENT=build)
+    desc: Save OpenCode agent/model (MODEL=provider/model OPENCODE_AGENT=build)
     env:
       MODEL: '{{.MODEL | default ""}}'
-      AGENT: '{{.AGENT | default "build"}}'
       COMMANDS: '{{.COMMANDS | default ""}}'
-    cmds: [uv run python scripts/operate.py configure-agent]
+    cmds:
+      - AGENT={{.OPENCODE_AGENT | default "build" | shellQuote}} uv run python scripts/operate.py configure-agent
   doctor:
     desc: Check live configuration and tools without invoking a model
     env:
