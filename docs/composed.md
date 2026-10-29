@@ -94,6 +94,14 @@ It refuses a different repository and filters edits/PRs. It does not run an HTTP
 
 ## Recovery and fidelity
 
+If synthesis reports a missing typed lens listing, compare the agent's actual read
+tool argument with the absolute `TYPED_ARTIFACTS_FILE` path in the saved synthesis
+prompt. Do not infer a runtime failure from the agent's summary alone: a live trial
+read a shortened path, then reported the intended path as missing. Preserve the
+prompt, listing, lens statuses and agent tool trace before cleanup. Completion
+evidence must still be verified; never override a not-ready verdict merely because
+a lens wrote a prose report.
+
 The same explicit worktree retention and human-ruling/new-run approach from [standalone operation](standalone.md#retry-questions-and-cleanup) applies. Stage receipts avoid replaying completed work. An interrupted journal entry refuses another attempt. Inspect GitHub, the checkout, `effects/`, source publication records, and `delivery/` before starting another run; a new state directory alone does not prove an uncertain write did not land. A failed nested delivery retains its original report and makes the parent fail after relaying that report.
 
 | Surface | Preserved | Concession / evidence limit |

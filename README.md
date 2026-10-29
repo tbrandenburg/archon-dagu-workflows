@@ -37,6 +37,9 @@ make standalone-native composed-native
 
 These demo/scenario targets mock model and forge effects; the live entrypoints and their required parameters are documented in the guides above.
 
+For live review readiness gaps, see [typed-listing diagnostics](/docs/composed.md#recovery-and-fidelity)
+before cleaning up the run evidence.
+
 ## Run delivery
 
 DAGU runs the workflow, OpenCode runs agent steps, and `gh` handles GitHub operations. No Archon installation is required.
