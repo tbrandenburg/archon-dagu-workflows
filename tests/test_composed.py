@@ -314,18 +314,44 @@ def test_not_ready_delivery_requests_a_root_decision(start):
     assert not report["outcome"] and report["needs_decision"]
 
 
-def test_live_synthesis_transport_binds_typed_metadata_and_commit(start, tmp_path):
-    run = start("review")
+@pytest.mark.parametrize(
+    "case,lenses",
+    [("happy", ["seams", "code", "tests"]), ("specialist-failed", ["seams", "tests"])],
+)
+def test_live_synthesis_transport_binds_typed_metadata_and_commit(start, tmp_path, case, lenses):
+    run = start("review", case)
     execute(run)
     stage = Stage(run, "synthesize")
     stage.fixture = False
+    expected = {
+        "artifactsByType": {
+            "review-lens": [
+                {
+                    "path": f"nodes/{lens}.json",
+                    "nodeId": lens,
+                    "producer": {"execution": {"path": lens, "invocation": {"loopPath": []}}},
+                    "loopGroupPath": [],
+                }
+                for lens in lenses
+            ]
+        },
+        "errors": [],
+    }
     script = tmp_path / "controlled-synthesis.py"
     script.write_text("""import os,pathlib,sys,json
 root=pathlib.Path(os.environ['ARTIFACTS_DIR'])
 (root/'received-synthesis.txt').write_text(sys.stdin.read())
+listing_path=pathlib.Path(os.environ['TYPED_ARTIFACTS_FILE'])
+listing=json.loads(listing_path.read_text())
+assert listing == json.loads(sys.argv[1]), listing
+outputs={row['nodeId']:json.loads((root/row['path']).read_text()) for row in listing['artifactsByType']['review-lens']}
+(root/'received-typed-artifacts.json').write_text(json.dumps({'path':str(listing_path),'listing':listing,'outputs':outputs}))
 print(json.dumps({'ready':True,'action':'none','findings_summary':'Controlled transport','report':{'type':'archon_artifact','run_id':root.name,'path':'review/report.md'},'discoveries':[],'contract_left':[]}))
 """)
-    stage.config = {**stage.config, "agent_argv": [sys.executable, str(script)]}
+    stage.config = {
+        **stage.config,
+        "agent_argv": [sys.executable, str(script), json.dumps(expected)],
+    }
     node = stage.nodes["synthesize"]
     result = stage.agent(node, "synthesize")
     stage.check(result, node)
@@ -334,6 +360,25 @@ print(json.dumps({'ready':True,'action':'none','findings_summary':'Controlled tr
     assert "$mode.output.head" not in prompt
     assert git(run.repo, "rev-parse", "HEAD") in prompt
     assert str(run.root / "typed/root.json") in prompt
+    proof = load(run.root / "received-typed-artifacts.json")
+    assert proof == {
+        "path": str(run.root / "typed/root.json"),
+        "listing": expected,
+        "outputs": {
+            lens: text
+            for lens, text in {
+                "seams": "Fixture seam lens completed.",
+                "code": "Fixture code lens completed.",
+                "tests": "Fixture tests lens completed.",
+            }.items()
+            if lens in lenses
+        },
+    }
+    assert load(run.root / "status/code.json")["status"] == (
+        "failed" if case == "specialist-failed" else "succeeded"
+    )
+    assert load(run.root / "status/errors.json")["status"] == "skipped"
+    assert load(run.root / "status/docs.json")["status"] == "skipped"
 
 
 def test_missing_lens_does_not_override_a_human_decision(start):

@@ -84,3 +84,14 @@ Fake issue text does not disable forge operations. A live-agent/fake-forge hybri
 ## Changes and verification
 
 Keep Make and Task targets aligned. After generator edits, run `make generate` and `make generated-check`. For code/workflow changes, use `make ci` and the applicable native checks. On hosts that block Unix sockets, record the limitation and rely on native CI rather than substituting the local harness. Do not modify pinned vendor files as part of routine changes. Keep credentials, local configuration and generated run artifacts out of commits.
+
+## Lessons Learned
+
+- 2026-10-29: Pitfall: Calling DAGU outside the project uv environment broke child Python imports. Prevention rule/countermeasure: launch from the repository root with `uv run .tools/bin/dagu ...`.
+- 2026-10-29: Pitfall: Confusing the local checkout path with the GitHub repository identity, or omitting issue-response identifiers, failed setup. Prevention rule/countermeasure: pass absolute `repo`, qualified `repository`, and positive `issue_number` explicitly.
+- 2026-10-29: Pitfall: Assuming `publish=false` suppresses review publication still posted a canonical PR comment. Prevention rule/countermeasure: inspect each workflow's write stages and treat live review as a forge write.
+- 2026-10-29: Pitfall: An agent's claim that a typed listing was missing was not independently verifiable after run artifacts were deleted. Prevention rule/countermeasure: preserve per-run artifacts and have a controlled process open and parse the exact listing before diagnosing.
+- 2026-10-29: Pitfall: Synthesis dropped a directory from a supplied path, then reported the intended path missing. Prevention rule/countermeasure: compare actual tool arguments with the saved prompt; inspect session tool history before treating agent summaries as runtime evidence.
+- 2026-10-29: Pitfall: Standup succeeded with partial context when its synthetic profile dirtied the checkout and lacked maintainer metadata and `origin/dev`. Prevention rule/countermeasure: prepare a clean dev checkout and complete profile before live standup.
+- 2026-10-29: Pitfall: A no-op ship run still created a local branch/worktree and waited for a human decision. Prevention rule/countermeasure: reconcile the gate, then remove only inventoried test-owned branches and worktrees.
+- 2026-10-29: Pitfall: First DAGU startup initialized sample definitions and run history in operator-global directories. Prevention rule/countermeasure: inspect and preserve `~/.config/dagu` and `~/.local/share/dagu` during project cleanup.
