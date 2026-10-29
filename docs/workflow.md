@@ -17,6 +17,19 @@ Give the workflow accepted work: a plan, change request, findings, or a PR to fi
 
 The full original prompts are in `prompts/`. For example, `implement.md` owns implementation behavior; `implement-delivery-context.md` supplies delivery-specific work. `review-code.md` asks for evidenced defects, `review-tests.md` checks meaningful missing proof, and `ci.md` specifies diagnosis and readiness handling. Short explanations here do not replace those prompts.
 
+## Adapter timeouts and cancellation
+
+Live delivery adapter commands have a `stage_timeout_seconds` limit (default
+3600 seconds), configurable in the selected command config. It must be a finite,
+positive number. On a stage timeout or parent SIGINT/SIGTERM, the runner sends
+SIGTERM to the adapter process group, waits up to five seconds, then sends
+SIGKILL if it is still running. The stage fails and captured stderr is retained.
+
+Timeout or cancellation does **not** prove that a commit, push, PR, or comment did
+not land before termination. Inspect GitHub, the checkout and the run's effect
+receipts before retrying; an ambiguous effect requires reconciliation, not a new
+state directory or blind replay.
+
 ## Try these cases
 
 ```bash

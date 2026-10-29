@@ -84,8 +84,12 @@ def test_live_transport_rejects_artifact_symlink_escape(tmp_path, monkeypatch):
     }
     monkeypatch.setattr(
         subprocess,
-        "run",
-        lambda *a, **k: SimpleNamespace(returncode=0, stdout=json.dumps(verdict), stderr=""),
+        "Popen",
+        lambda *a, **k: SimpleNamespace(
+            pid=0,
+            returncode=0,
+            communicate=lambda *args, **kwargs: (json.dumps(verdict), ""),
+        ),
     )
     with pytest.raises(ValueError, match="symlink escapes"):
         engine.invoke(artifacts, "review", {}, 1, {})

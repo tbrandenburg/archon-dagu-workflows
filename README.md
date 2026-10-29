@@ -40,6 +40,8 @@ These demo/scenario targets mock model and forge effects; the live entrypoints a
 For live review readiness gaps, see [typed-listing diagnostics](/docs/composed.md#recovery-and-fidelity)
 before cleaning up the run evidence.
 
+Before model-backed PR, review, or validation trials, follow the [live acceptance checklist](docs/live-acceptance.md).
+
 ## Run delivery
 
 DAGU runs the workflow, OpenCode runs agent steps, and `gh` handles GitHub operations. No Archon installation is required.
