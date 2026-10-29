@@ -342,6 +342,20 @@ class Run:
                     "A detached checkout has no usable current branch; fail preparation before "
                     "publication rather than guessing or substituting a branch.\n"
                 )
+        if (
+            self.name == "review"
+            and self.ctx.get("prompt_namespace") == "composed"
+            and node["id"] == "synthesize"
+        ):
+            prompt += (
+                "\nTyped-artifact path runtime guidance: each `path` in the typed-artifact "
+                "listing is relative to `ARTIFACTS_DIR`, not to the listing file's parent. "
+                "Resolve each listed record as `ARTIFACTS_DIR / entry.path` (for example, "
+                "`nodes/code.json` is under the artifacts root, not under `typed/`). "
+                "Read and verify the exact referenced record; missing, unreadable, or "
+                "malformed required evidence still blocks readiness. Do not infer completion "
+                "from prose or relax certification.\n"
+            )
         prompt += "\n\nDAGU bound inputs (authoritative):\n" + json.dumps(values)
         if node.get("output_format"):
             prompt += (

@@ -383,6 +383,8 @@ listing_path=pathlib.Path(os.environ['TYPED_ARTIFACTS_FILE'])
 listing=json.loads(listing_path.read_text())
 assert listing == json.loads(sys.argv[1]), listing
 outputs={row['nodeId']:json.loads((root/row['path']).read_text()) for row in listing['artifactsByType']['review-lens']}
+assert all((root/row['path']).is_file() for row in listing['artifactsByType']['review-lens'])
+assert not (listing_path.parent/'nodes/code.json').exists()
 (root/'received-typed-artifacts.json').write_text(json.dumps({'path':str(listing_path),'listing':listing,'outputs':outputs}))
 print(json.dumps({'ready':True,'action':'none','findings_summary':'Controlled transport','report':{'type':'archon_artifact','run_id':root.name,'path':'review/report.md'},'discoveries':[],'contract_left':[]}))
 """)
@@ -398,6 +400,9 @@ print(json.dumps({'ready':True,'action':'none','findings_summary':'Controlled tr
     assert "$mode.output.head" not in prompt
     assert git(run.repo, "rev-parse", "HEAD") in prompt
     assert str(run.root / "typed/root.json") in prompt
+    assert "relative to `ARTIFACTS_DIR`, not to the listing file's parent" in prompt
+    assert "Resolve each listed record as `ARTIFACTS_DIR / entry.path`" in prompt
+    assert "still blocks readiness" in prompt
     proof = load(run.root / "received-typed-artifacts.json")
     assert proof == {
         "path": str(run.root / "typed/root.json"),

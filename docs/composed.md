@@ -102,6 +102,12 @@ prompt, listing, lens statuses and agent tool trace before cleanup. Completion
 evidence must still be verified; never override a not-ready verdict merely because
 a lens wrote a prose report.
 
+In the typed listing, each row's `path` is relative to `ARTIFACTS_DIR`, not to the
+listing's `typed/` directory. For example, resolve `nodes/code.json` as
+`$ARTIFACTS_DIR/nodes/code.json`, not `$ARTIFACTS_DIR/typed/nodes/code.json`.
+Read the exact referenced file; missing, unreadable, or malformed required evidence
+continues to block readiness.
+
 The same explicit worktree retention and human-ruling/new-run approach from [standalone operation](standalone.md#retry-questions-and-cleanup) applies. Stage receipts avoid replaying completed work. An interrupted journal entry refuses another attempt. Inspect GitHub, the checkout, `effects/`, source publication records, and `delivery/` before starting another run; a new state directory alone does not prove an uncertain write did not land. A failed nested delivery retains its original report and makes the parent fail after relaying that report.
 
 | Surface | Preserved | Concession / evidence limit |
