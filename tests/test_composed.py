@@ -6,6 +6,7 @@ import sys
 
 import pytest
 
+from archon_dagu import standalone
 from archon_dagu.composed import Composed, Stage, setup, when
 from archon_dagu.engine import BASE, SOURCE, load, save
 from archon_dagu.local_runner import run as local_run
@@ -166,6 +167,43 @@ def test_uncertain_pr_publication_is_durable_and_cannot_replay(start):
     assert (run.root / "effects/pr-uncertain.json").exists()
     with pytest.raises(ValueError, match="Uncertain"):
         run.stage("publish")
+
+
+@pytest.mark.parametrize(
+    "branch,expected",
+    [
+        ("workflow-test-issue16/validation", "authoritative as the PR head"),
+        ("", "no explicit `branch` input was supplied"),
+    ],
+)
+def test_pr_prepare_runtime_guidance_handles_detached_checkout(
+    start, monkeypatch, branch, expected
+):
+    run = start("pr")
+    run.ctx["inputs"]["branch"] = branch
+    if branch:
+        git(run.repo, "branch", branch)
+    git(run.repo, "checkout", "--detach", "HEAD")
+    assert git(run.repo, "branch", "--show-current") == ""
+    stage = Stage(run, "prepare")
+    stage.fixture = False
+    stage.ctx["mode"] = "live"
+    prompt = {}
+
+    def capture(argv, cwd, env, stdin, timeout):
+        prompt["text"] = stdin
+        return "{}"
+
+    monkeypatch.setattr(standalone, "invoke", capture)
+    stage.agent(stage.nodes["prepare"], "prepare")
+
+    assert expected in prompt["text"]
+    if branch:
+        assert "do not derive it from `git branch --show-current`" in prompt["text"]
+        assert "fail preparation; never substitute another branch" in prompt["text"]
+        assert "workflow-test-issue16/validation" in prompt["text"]
+    else:
+        assert "fail preparation before publication" in prompt["text"]
 
 
 def test_local_harness_never_implicitly_approves_a_live_gate(tmp_path):

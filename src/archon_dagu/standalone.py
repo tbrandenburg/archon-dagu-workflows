@@ -325,6 +325,23 @@ class Run:
             "No Archon CLI, plugin or service is available. Never invoke archon commands. "
             "Rerun guidance must use this workflow's documented DAGU entrypoint.\n"
         )
+        if self.name == "pr" and node["id"] == "prepare":
+            branch = self.ctx["inputs"].get("branch", "").strip()
+            if branch:
+                prompt += (
+                    "\nPR branch runtime guidance: this workflow intentionally inspects a detached "
+                    "worktree. The explicit bound `branch` input is authoritative as the PR head; "
+                    "do not derive it from `git branch --show-current`. Verify that the named "
+                    "branch resolves in this repository to the commit being prepared, and report "
+                    "that exact name as `head`. If it cannot be verified, fail preparation; never "
+                    "substitute another branch.\n"
+                )
+            else:
+                prompt += (
+                    "\nPR branch runtime guidance: no explicit `branch` input was supplied. "
+                    "A detached checkout has no usable current branch; fail preparation before "
+                    "publication rather than guessing or substituting a branch.\n"
+                )
         prompt += "\n\nDAGU bound inputs (authoritative):\n" + json.dumps(values)
         if node.get("output_format"):
             prompt += (
