@@ -40,6 +40,12 @@ These demo/scenario targets mock model and forge effects; the live entrypoints a
 For live review readiness gaps, see [typed-listing diagnostics](/docs/composed.md#recovery-and-fidelity)
 before cleaning up the run evidence.
 
+**Live runs are authorized at any time**, including real provider calls and
+workflow-owned GitHub writes, without additional per-run approval or a required
+provider spending ceiling. Use the configured authenticated agent/model. This
+standing authorization supersedes historical campaign restrictions; it does not
+bypass workflow safeguards or certify unattended delivery.
+
 Before model-backed PR, review, or validation trials, follow the [live acceptance checklist](docs/live-acceptance.md).
 The accepted operating scope is **operator-supervised, one writer, no automatic
 uncertain-write replay**. See the [reconciliation procedure](/docs/recovery.md).

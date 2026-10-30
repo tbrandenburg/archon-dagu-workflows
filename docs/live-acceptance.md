@@ -4,14 +4,21 @@ Live acceptance is an operator-run evidence campaign, not a fixture or a claim
 that the workflow is ready for unattended writes. It may push branches, open or
 update PRs/comments, and incur provider charges. Do not merge any test PR.
 
-## Safety gate and campaign bounds
+## Standing authorization and safety bounds
+
+Live runs are authorized at any time for repository work and validation, including
+real provider calls and workflow-owned GitHub writes. No additional per-run owner
+approval, campaign authorization, or provider spending ceiling is required.
+Configured provider charges and subscription usage are permitted without a
+repository-imposed dollar ceiling. This policy supersedes historical campaign
+restrictions, including the preflight record below. It does not bypass workflow
+human-decision gates, credentials, target permissions, or accepted work scope.
 
 Before the first model-backed run, record in a unique ignored
 `.runs/issue16-*` directory:
 
 - UTC deadline and maximum run attempts per matrix case;
-- the explicit provider/model and spending policy: an enforceable ceiling, or
-  explicit owner authorization for subscription use without a dollar ceiling;
+- the effective configured provider/model and any optional run-specific budget;
 - repository identity, disposable branch, base/head SHA, and exact intended
   GitHub writes;
 - DAGU, agent CLI, `gh`, Bun and workflow revision; do not copy credentials;
@@ -23,10 +30,11 @@ that cannot be positively identified as created by this campaign. Preserve the
 run directory and all reports before closing test PRs/issues or deleting owned
 branches. Never merge.
 
-Stop without a provider call if the selected model or spending policy is not
-authorized, authentication/target permissions are uncertain,
+Stop without a provider call if the configured model is unavailable,
+authentication/target permissions are uncertain,
 the disposable target cannot be identified, or evidence storage is unavailable.
-An execution cap alone is not a provider spending cap. Do not substitute a
+An execution cap alone is not a provider spending cap; a dollar ceiling is optional.
+Do not substitute a
 fixture, manually perform a workflow-owned GitHub write, or change models after
 a failed call and count that as live acceptance.
 
@@ -88,13 +96,12 @@ multiple providers/models but did not establish which model the issue worktree
 would use. Therefore no provider spend could be bounded for this campaign. These
 are preflight stop conditions, not workflow defects.
 
-**Campaign disposition:** deadline 2026-10-29 23:59 UTC; at most one attempt per
-case; total provider spending ceiling for this campaign: **$0**. No paid model
-calls and no live workflow runs are authorized under that ceiling. All matrix
-cases remain **not run / blocked by preflight**; the campaign must not imply
-acceptance. Begin a new bounded campaign only after pinning a provider/model,
-setting a positive explicit spend ceiling, installing/verifying pinned DAGU,
-and recording a new deadline and attempt cap.
+**Historical campaign disposition:** deadline 2026-10-29 23:59 UTC; at most one
+attempt per case; recorded provider spending ceiling: **$0**. No paid model calls
+or live workflow runs occurred in that preflight. Its matrix cases were
+**not run / blocked by preflight**; this is not acceptance evidence or a current
+restriction on live runs. New runs use the standing authorization above, verify
+the configured provider/model and pinned DAGU, and record a deadline and attempt cap.
 
 Detailed preflight command/output evidence is retained in the ignored run
 directory `.runs/issue16-20261029-preflight/`.

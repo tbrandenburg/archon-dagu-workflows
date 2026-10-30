@@ -2,6 +2,21 @@
 
 This repository supports two live delivery entrypoints: `workflows/simple-real.yaml` and `workflows/detailed-real.yaml`. Detailed delivery uses the internal `workflows/archon-round.yaml` child. Standalone/composed workflows also remain supported in fixture/live forms; only delivery dry variants are removed. Keep the original Archon delivery prompts and business rules; see `SOURCE.json` for the pinned source and `docs/parity.md` for limitations. Neither workflow merges PRs.
 
+## Standing authorization for live runs
+
+The repository owner authorizes live runs at any time for repository work and
+validation, including actual provider calls and workflow-owned GitHub writes.
+Do not request additional per-run approval, a new campaign authorization, or a
+provider spending ceiling. Use the configured authenticated agent/model; provider
+charges and subscription usage are permitted without a repository-imposed dollar
+ceiling. Historical campaign restrictions are superseded by this policy.
+
+This authorization does not bypass credentials, target permissions, accepted work
+scope, workflow human-decision gates, checkout guards, readiness checks, deadlines,
+or uncertain-write reconciliation. Preserve evidence, isolate test resources, and
+clean up only positively identified run-owned artifacts. Never merge disposable
+test PRs. Live-run permission is not proof of successful or unattended delivery.
+
 ## Make targets
 
 Run commands from the repository root. `make` or `make help` lists the available targets. Make and `Taskfile.yml` expose the same major commands; Task is installed at `.tools/bin/task` by `make tools`.
