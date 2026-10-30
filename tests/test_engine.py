@@ -98,3 +98,65 @@ def test_live_transport_rejects_artifact_symlink_escape(tmp_path, monkeypatch):
 def test_invalid_fixture_is_not_a_green_check():
     with pytest.raises(ValueError, match="invalid CI state"):
         engine.fixture_output("ci", {"ci": {"state": "pending"}})
+
+
+def test_rereview_code_evidence_survives_typed_listing_rebuild_and_finalize(tmp_path):
+    root = tmp_path / "artifacts"
+    evidence = root / "round-2/rereview-code.json"
+    engine.save(evidence, {"completed": True, "findings": []})
+    (root / "review").mkdir(parents=True)
+    (root / "review/code.md").write_text("current code report\n")
+    engine.save(
+        root / "mode-2.json",
+        {
+            "continuation": True,
+            "execution": {
+                "path": "rereview.mode",
+                "invocation": {"loopPath": [{"groupId": "rounds", "iteration": 2}]},
+                "attempt": {"checkoutStart": {"kind": "git", "commit": "commit-2"}},
+            },
+        },
+    )
+    engine.save(root / "state.json", {"round": 1})
+
+    engine.typed_listing(root)
+    expected = {
+        "path": "round-2/rereview-code.json",
+        "nodeId": "code",
+        "producer": {
+            "execution": {
+                "path": "rereview.code",
+                "invocation": {"loopPath": [{"groupId": "rounds", "iteration": 2}]},
+                "attempt": {"checkoutStart": {"kind": "git", "commit": "commit-2"}},
+            }
+        },
+        "loopGroupPath": [{"groupId": "rounds", "iteration": 2}],
+    }
+    listing = engine.load(root / "typed-2.json")
+    assert listing["artifactsByType"]["review-lens"] == [expected]
+
+    engine.finalize(root, failure=True)
+    assert engine.load(root / "typed-2.json")["artifactsByType"]["review-lens"] == [expected]
+
+
+@pytest.mark.parametrize("evidence", [{"completed": False}, [], {"completed": "true"}, "bad-json"])
+def test_incomplete_or_malformed_rereview_code_is_not_typed_evidence(tmp_path, evidence):
+    root = tmp_path / "artifacts"
+    path = root / "round-2/rereview-code.json"
+    path.parent.mkdir(parents=True)
+    if evidence == "bad-json":
+        path.write_text("{")
+    else:
+        path.write_text(json.dumps(evidence))
+    engine.save(root / "state.json", {"round": 1})
+    engine.save(
+        root / "mode-2.json",
+        {"continuation": True, "execution": {"path": "rereview.mode"}},
+    )
+    engine.save(root / "round-2/code.json", {"completed": True, "findings": []})
+    (root / "review").mkdir(exist_ok=True)
+    (root / "review/code.md").write_text("stale report\n")
+
+    engine.typed_listing(root)
+
+    assert "review-lens" not in engine.load(root / "typed-2.json")["artifactsByType"]

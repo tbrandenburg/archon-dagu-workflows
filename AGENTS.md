@@ -87,6 +87,7 @@ Keep Make and Task targets aligned. After generator edits, run `make generate` a
 
 ## Lessons Learned
 
+- 2026-10-30: Pitfall: a compound stage can run several sequential agent calls under one outer deadline, and timed communication loops can deadlock large stdin. Prevention: treat stage limits as aggregate, test end-to-end large prompts and compound timing, and use single `communicate(input=...)` with owned cancellation.
 - 2026-10-29: Pitfall: Calling DAGU outside the project uv environment broke child Python imports. Prevention rule/countermeasure: launch from the repository root with `uv run .tools/bin/dagu ...`.
 - 2026-10-29: Pitfall: Confusing the local checkout path with the GitHub repository identity, or omitting issue-response identifiers, failed setup. Prevention rule/countermeasure: pass absolute `repo`, qualified `repository`, and positive `issue_number` explicitly.
 - 2026-10-29: Pitfall: Assuming `publish=false` suppresses review publication still posted a canonical PR comment. Prevention rule/countermeasure: inspect each workflow's write stages and treat live review as a forge write.

@@ -7,6 +7,8 @@ This integration is experimental until validated on the operator's disposable re
 import json
 import os
 import pathlib
+import re
+import signal
 import subprocess
 import sys
 
@@ -15,6 +17,8 @@ import yaml
 from .runtime import RUNTIME_GUIDANCE, github_config, github_env, script_output
 
 B = pathlib.Path(__file__).resolve().parents[2]
+
+
 req = json.load(sys.stdin)
 ctx = req["context"]
 root = pathlib.Path(req["artifacts_dir"])
@@ -43,6 +47,10 @@ def execution(name):
         "invocation": {"loopPath": [{"groupId": "rounds", "iteration": n}]},
         "attempt": {"checkoutStart": {"kind": "git", "commit": git("rev-parse", "HEAD")}},
     }
+
+
+def phase_execution(phase):
+    return execution(phase)
 
 
 env = {
@@ -75,8 +83,10 @@ for k, v in inputs.items():
     env["INPUTS_" + k.upper()] = text(v)
 
 
-def script(relative, bindings=None, *, output="json"):
+def script(relative, bindings=None, *, output="json", phase=None):
     e = {**env, **{"INPUTS_" + k.upper(): text(v) for k, v in (bindings or {}).items()}}
+    if phase:
+        e["ARCHON_NODE_EXECUTION"] = json.dumps(phase_execution(phase))
     p = subprocess.run(
         ["bun", str(source / relative)], cwd=repo, env=e, text=True, capture_output=True
     )
@@ -92,7 +102,7 @@ def schema_for(folder, filename, node):
     return next(x for x in d["nodes"] if x["id"] == node).get("output_format")
 
 
-def checked_agent(prompt_name, schema=None, extra=None, readonly=False):
+def checked_agent(prompt_name, schema=None, extra=None, readonly=False, phase=None):
     p = (B / "prompts" / (prompt_name + ".md")).read_text()
     values = {
         **{"$INPUTS." + k: text(v) for k, v in inputs.items()},
@@ -103,22 +113,33 @@ def checked_agent(prompt_name, schema=None, extra=None, readonly=False):
         "$TYPED_ARTIFACTS_FILE": str(root / f"typed-{n}.json"),
         "$LOOP_PREV_OUTPUT": text(out.get("previous_turn", "")),
     }
-    values["$route.output"] = text(out.get("route", {}))
     mode_path = root / f"mode-{n}.json"
     mode = json.loads(mode_path.read_text()) if mode_path.exists() else {}
+    values["$route.output"] = text(
+        {key: mode.get(key, False) for key in ["seams", "code", "tests", "errors", "docs"]}
+        if mode.get("continuation")
+        else out.get("route", {})
+    )
+    values["$mode.output"] = text(mode)
     for k, v in mode.items():
         values["$mode.output." + k] = text(v)
     if extra:
         values.update(extra)
-    for k in sorted(values, key=len, reverse=True):
-        p = p.replace(k, values[k])
+    p = re.sub(
+        "|".join(re.escape(k) for k in sorted(values, key=len, reverse=True)),
+        lambda match: values[match[0]],
+        p,
+    )
+    current_route = json.loads(values["$route.output"])
+    stage_execution = phase_execution(phase or stage)
     p += RUNTIME_GUIDANCE
     p += "\n\nDAGU stage context (authoritative bound inputs):\n" + json.dumps(
         {
             "inputs": inputs,
             "previous_round": prev,
-            "current_outputs": out,
-            "execution": execution(stage),
+            "current_outputs": {**out, "route": current_route},
+            "mode": mode,
+            "execution": stage_execution,
             "feedback": ctx.get("feedback", ""),
         },
         indent=2,
@@ -135,11 +156,81 @@ def checked_agent(prompt_name, schema=None, extra=None, readonly=False):
         if readonly
         else ""
     )
-    q = subprocess.run(agent, input=p, cwd=repo, env=env, text=True, capture_output=True)
-    if q.stderr:
-        print(q.stderr, file=sys.stderr, end="")
-    if q.returncode:
-        raise RuntimeError("Agent CLI failed: " + q.stderr[-1000:])
+    agent_env = {**env, "ARCHON_NODE_EXECUTION": json.dumps(stage_execution)}
+    received_signal = []
+    previous_handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGINT, signal.SIGTERM)}
+    process = None
+
+    def defer_signal(signum, _frame):
+        if not received_signal:
+            received_signal.append(signum)
+        if process is not None and process.poll() is None:
+            try:
+                os.killpg(process.pid, signum)
+            except ProcessLookupError:
+                pass
+
+    for sig in previous_handlers:
+        signal.signal(sig, defer_signal)
+    try:
+        if received_signal:
+            raise RuntimeError("Agent CLI invocation cancelled before spawn")
+        process = subprocess.Popen(
+            agent,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=repo,
+            env=agent_env,
+            text=True,
+            start_new_session=True,
+        )
+        while True:
+            if received_signal:
+                try:
+                    os.killpg(process.pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+                try:
+                    stdout, stderr = process.communicate(timeout=3.2)
+                except subprocess.TimeoutExpired:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    stdout, stderr = process.communicate(timeout=1)
+                q = subprocess.CompletedProcess(agent, process.returncode, stdout, stderr)
+                break
+            stdout, stderr = process.communicate(input=p)
+            q = subprocess.CompletedProcess(agent, process.returncode, stdout, stderr)
+            break
+        if q.stderr:
+            print(q.stderr, file=sys.stderr, end="")
+        if received_signal:
+            raise RuntimeError(
+                f"Agent CLI interrupted by {signal.Signals(received_signal[0]).name}"
+            )
+        if q.returncode:
+            raise RuntimeError("Agent CLI failed: " + q.stderr[-1000:])
+        old_mask = signal.pthread_sigmask(signal.SIG_BLOCK, set(previous_handlers))
+        try:
+            for sig, handler in previous_handlers.items():
+                signal.signal(sig, handler)
+            if received_signal:
+                raise RuntimeError(
+                    f"Agent CLI interrupted by {signal.Signals(received_signal[0]).name}"
+                )
+        finally:
+            signal.pthread_sigmask(signal.SIG_SETMASK, old_mask)
+    finally:
+        if process is not None and process.poll() is None:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait(timeout=1)
+        for sig, handler in previous_handlers.items():
+            signal.signal(sig, handler)
     if readonly and before != git("rev-parse", "HEAD") + "\n" + git(
         "status", "--porcelain", "--untracked-files=all"
     ) + "\n" + git("diff", "HEAD", "--binary"):
@@ -192,7 +283,10 @@ elif stage == "pr":
 elif stage == "scope":
     (root / "review").mkdir(exist_ok=True)
     result = checked_agent(
-        "scope", schema_for("review", "archon-review-block.yaml", "scope"), readonly=True
+        "scope",
+        schema_for("review", "archon-review-block.yaml", "scope"),
+        readonly=True,
+        phase="review.scope",
     )
     if result["head_matches"]:
         mode = script(
@@ -202,11 +296,15 @@ elif stage == "scope":
                 "light": text(inputs["light"]),
                 "part": ctx["part"],
             },
+            phase="review.mode",
         )
         (root / f"mode-{n}.json").write_text(json.dumps(mode))
 elif stage == "route":
     result = checked_agent(
-        "route", schema_for("review", "archon-review-block.yaml", "route"), readonly=True
+        "route",
+        schema_for("review", "archon-review-block.yaml", "route"),
+        readonly=True,
+        phase="review.route",
     )
 elif stage in ["seams", "code", "tests", "errors", "docs"]:
     result = checked_agent(
@@ -217,6 +315,7 @@ elif stage in ["seams", "code", "tests", "errors", "docs"]:
             "required": ["completed", "findings"],
         },
         readonly=True,
+        phase="review." + stage,
     )
     report = root / "review" / (stage + ".md")
     if not report.is_file() or not report.stat().st_size:
@@ -226,21 +325,30 @@ elif stage in ["review", "rereview"]:
         inputs["prior_report"] = str(root / "review/report.md")
         inputs["light"] = True
         scope_again = checked_agent(
-            "scope", schema_for("review", "archon-review-block.yaml", "scope"), readonly=True
+            "scope",
+            schema_for("review", "archon-review-block.yaml", "scope"),
+            readonly=True,
+            phase="rereview.scope",
         )
         if not scope_again["head_matches"]:
             raise RuntimeError(
                 "Head changed during reshape rereview; needs operator reconciliation"
             )
-        (root / f"mode-{n}.json").write_text(
-            json.dumps(
-                script(
-                    "review/scripts/review-round.ts",
-                    {"prior_report": inputs["prior_report"], "light": "true", "part": ctx["part"]},
-                )
-            )
+        rereview_mode = script(
+            "review/scripts/review-round.ts",
+            {"prior_report": inputs["prior_report"], "light": "true", "part": ctx["part"]},
+            phase="rereview.mode",
         )
+        # The mode owns this round's selection and execution identity. Do not
+        # let the previous full-review route leak into a light rereview.
+        (root / f"mode-{n}.json").write_text(json.dumps(rereview_mode))
         # A light rereview must include an independent code lens before synthesis.
+        old_code_report = root / "review/code.md"
+        if old_code_report.exists():
+            previous_copy = root / f"review/code-round-{n - 1}.md"
+            if not previous_copy.exists():
+                previous_copy.write_bytes(old_code_report.read_bytes())
+            old_code_report.unlink()
         code_result = checked_agent(
             "code",
             {
@@ -249,9 +357,16 @@ elif stage in ["review", "rereview"]:
                 "required": ["completed", "findings"],
             },
             readonly=True,
+            phase="rereview.code",
         )
     if stage == "rereview":
+        report = root / "review/code.md"
+        if code_result.get("completed") is not True:
+            raise RuntimeError("Rereview code lens did not complete successfully")
+        if not report.is_file() or not report.stat().st_size:
+            raise RuntimeError("Reviewer did not write " + str(report))
         codefile = root / f"round-{n}/rereview-code.json"
+        codefile.parent.mkdir(parents=True, exist_ok=True)
         codefile.write_text(json.dumps(code_result))
         listing = {
             "artifactsByType": {
@@ -259,6 +374,7 @@ elif stage in ["review", "rereview"]:
                     {
                         "path": str(codefile.relative_to(root)),
                         "nodeId": "code",
+                        "producer": {"execution": phase_execution("rereview.code")},
                         "loopGroupPath": [{"groupId": "rounds", "iteration": n}],
                     }
                 ]
@@ -273,6 +389,7 @@ elif stage in ["review", "rereview"]:
             schema_for("review", "archon-review-block.yaml", "synthesize"),
             {"$INPUTS.policy_defaults": text(policy["defaults"])},
             readonly=True,
+            phase="review.synthesize" if stage == "review" else "rereview.synthesize",
         )
     finally:
         script("review/scripts/prune-scratch.ts", {"lens": ""}, output="text")
