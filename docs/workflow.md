@@ -21,9 +21,16 @@ The full original prompts are in `prompts/`. For example, `implement.md` owns im
 
 Live delivery adapter commands have a `stage_timeout_seconds` limit (default
 3600 seconds), configurable in the selected command config. It must be a finite,
-positive number. On a stage timeout or parent SIGINT/SIGTERM, the runner sends
+positive number no greater than 86400 seconds (24 hours); invalid values are
+rejected before spawning, rather than overflowing a platform wait after launch.
+On a stage timeout or parent SIGINT/SIGTERM, the runner sends
 SIGTERM to the adapter process group, waits up to five seconds, then sends
 SIGKILL if it is still running. The stage fails and captured stderr is retained.
+Cancellation received during that cleanup still stops the workflow rather than
+becoming a recoverable specialist timeout. Adapter pipes are captured as bytes so
+malformed UTF-8 cannot bypass process-group termination; stderr logs preserve the
+original bytes. Unexpected communication failures also terminate/reap the owned
+process group before propagating.
 
 Timeout or cancellation does **not** prove that a commit, push, PR, or comment did
 not land before termination. Inspect GitHub, the checkout and the run's effect

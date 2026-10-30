@@ -158,7 +158,9 @@ def test_timeout_kills_term_ignoring_descendant_that_closed_pipes(tmp_path, monk
                     pass
 
 
-@pytest.mark.parametrize("timeout", [float("nan"), float("inf"), 0, -1, 10**400])
+@pytest.mark.parametrize(
+    "timeout", [float("nan"), float("inf"), 0, -1, 10**400, 86401, 2592000, 1e20]
+)
 def test_invalid_live_timeout_does_not_spawn_adapter(tmp_path, monkeypatch, timeout):
     artifacts = tmp_path / "artifacts"
     artifacts.mkdir()

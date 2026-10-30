@@ -88,7 +88,7 @@ def test_live_transport_rejects_artifact_symlink_escape(tmp_path, monkeypatch):
         lambda *a, **k: SimpleNamespace(
             pid=0,
             returncode=0,
-            communicate=lambda *args, **kwargs: (json.dumps(verdict), ""),
+            communicate=lambda *args, **kwargs: (json.dumps(verdict).encode("utf-8"), b""),
         ),
     )
     with pytest.raises(ValueError, match="symlink escapes"):

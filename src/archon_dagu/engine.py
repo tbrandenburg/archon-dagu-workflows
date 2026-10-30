@@ -6,7 +6,6 @@ Simulation never invokes a subprocess. Real mode requires an explicit adapter ar
 import argparse
 import hashlib
 import json
-import math
 import os
 import pathlib
 import re
@@ -299,14 +298,8 @@ def invoke(root, stage, spec, n, v):
     )
     save(root / "requests" / f"{n}-{stage}.json", request)
     timeout = cfg.get("stage_timeout_seconds", 3600)
-    if type(timeout) not in (int, float) or timeout <= 0:
-        raise ValueError("stage_timeout_seconds must be a positive number")
-    try:
-        finite_timeout = math.isfinite(timeout)
-    except OverflowError:
-        finite_timeout = False
-    if not finite_timeout:
-        raise ValueError("stage_timeout_seconds must be a positive number")
+    if type(timeout) not in (int, float) or not 0 < timeout <= 86400:
+        raise ValueError("stage_timeout_seconds must be a positive number no greater than 86400")
     previous_handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT)}
     received_signal = None
     proc = None
@@ -328,18 +321,21 @@ def invoke(root, stage, spec, n, v):
         except ProcessLookupError:
             pass
         try:
-            output = proc.communicate(timeout=5)
-        except subprocess.TimeoutExpired:
+            try:
+                return proc.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                return proc.communicate(timeout=5)
+        finally:
+            # Pipe/decoding failures must never bypass descendant termination or reaping.
             try:
                 os.killpg(proc.pid, signal.SIGKILL)
             except ProcessLookupError:
                 pass
-            return proc.communicate()
-        try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        return output
+            proc.wait(timeout=5)
 
     try:
         for sig in previous_handlers:
@@ -351,32 +347,38 @@ def invoke(root, stage, spec, n, v):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE,
-            text=True,
             cwd=ctx["repo"],
             start_new_session=True,
         )
         spawning = False
         if received_signal is not None:
             raise KeyboardInterrupt(f"interrupted by {signal.Signals(received_signal).name}")
-        try:
-            stdout, stderr = proc.communicate(json.dumps(request), timeout=timeout)
-        except subprocess.TimeoutExpired:
-            _, stderr = stop_group()
-            (root / "requests" / f"{n}-{stage}.stderr.log").write_text(stderr)
-            raise TimeoutError(f"{stage} command exceeded {timeout}s") from None
-    except KeyboardInterrupt:
+        output, stderr = proc.communicate(json.dumps(request).encode("utf-8"), timeout=timeout)
+        stdout = output.decode("utf-8")
+    except BaseException as error:
         if proc is not None:
             _, stderr = stop_group()
-            (root / "requests" / f"{n}-{stage}.stderr.log").write_text(stderr)
+            (root / "requests" / f"{n}-{stage}.stderr.log").write_bytes(stderr)
+        if isinstance(error, subprocess.TimeoutExpired):
+            raise TimeoutError(f"{stage} command exceeded {timeout}s") from None
         raise
     finally:
         old_mask = signal.pthread_sigmask(signal.SIG_BLOCK, set(previous_handlers))
-        for sig, handler in previous_handlers.items():
-            signal.signal(sig, handler)
-        signal.pthread_sigmask(signal.SIG_SETMASK, old_mask)
-    (root / "requests" / f"{n}-{stage}.stderr.log").write_text(stderr)
+        try:
+            for sig, handler in previous_handlers.items():
+                signal.signal(sig, handler)
+            # Decide after blocking: the temporary handler cannot record a later cancellation.
+            if received_signal is not None:
+                raise KeyboardInterrupt(
+                    f"interrupted by {signal.Signals(received_signal).name}"
+                ) from None
+        finally:
+            signal.pthread_sigmask(signal.SIG_SETMASK, old_mask)
+    (root / "requests" / f"{n}-{stage}.stderr.log").write_bytes(stderr)
     if proc.returncode:
-        raise RuntimeError(stage + " command failed: " + stderr[-1000:])
+        raise RuntimeError(
+            stage + " command failed: " + stderr[-1000:].decode("utf-8", "backslashreplace")
+        )
     result = validate(stage, json.loads(stdout))
     if not cfg.get("test_transport"):
         schema = load(BASE / "schemas.json", {}).get(stage)

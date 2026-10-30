@@ -45,6 +45,9 @@ The accepted operating scope is **operator-supervised, one writer, no automatic
 uncertain-write replay**. See the [reconciliation procedure](/docs/recovery.md).
 This is not acceptance of unattended delivery, ship/upkeep mutation, or automatic
 human continuation.
+Delivery adapter deadlines are limited to 24 hours; cancellation remains terminal
+even during timeout cleanup, and raw stderr survives malformed output. See
+[adapter timeouts](/docs/workflow.md#adapter-timeouts-and-cancellation).
 
 ## Run delivery
 

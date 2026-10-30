@@ -63,7 +63,7 @@ def test_sigterm_during_spawn_stops_new_process_group(tmp_path):
         "def interrupting_popen(*args, **kwargs):\n"
         "    proc = real_popen([sys.executable, '-c', child_code, str(ready)], "
         "stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, "
-        "text=True, start_new_session=True)\n"
+        "start_new_session=True)\n"
         "    child_pid.write_text(str(proc.pid))\n"
         "    deadline = time.monotonic() + 5\n"
         "    while time.monotonic() < deadline and not ready.exists():\n"
