@@ -132,10 +132,13 @@ Worktrees and implementation branches are retained for inspection and handoff. R
 | Native DAGU scheduling | CI requirement | All twelve previews plus all 36 fixture executions; no local-runner substitution in native job |
 
 Validation has two different non-green states. A command that **starts and fails**
-produces `red` and is classified as introduced, inherited, or environment. A command
-that **cannot start**, or a gate that times out, is `incomplete`; its classifier
-does not run. Do not relabel an unstartable command as `environment` to satisfy an
-acceptance checklist. `validation.md`, `validation/*.log`, `nodes/discover.json`
+produces `red` unless incomplete execution takes precedence; a red gate is
+classified as introduced, inherited, or environment. A command that **cannot
+start** makes the gate `incomplete`, even if an independent check failed; the
+runner retains observed failures in that incomplete summary. A gate timeout also
+produces `incomplete`. The classifier does not run for incomplete gates. Do not
+relabel an unstartable command as `environment` to satisfy an acceptance
+checklist. `validation.md`, `validation/*.log`, `nodes/discover.json`
 and `nodes/run.json` are the execution evidence. Classifier prose is not proof of
 the command, exit code, or cause. The final red summary preserves the runner's
 facts and labels the cause as an agent assessment; the raw analysis is retained
