@@ -52,6 +52,7 @@ def run_stage(
     env = {
         **os.environ,
         **(env_extra or {}),
+        "PATH": str(BASE / ".tools/bin") + os.pathsep + os.environ["PATH"],
         "PYTHONPATH": str(BASE / "src") + os.pathsep + os.environ.get("PYTHONPATH", ""),
         "FAKE_AGENT_LOG": str(root / "agent-log.jsonl"),
     }
@@ -221,8 +222,9 @@ def test_live_agent_receives_large_prompt_without_stdin_deadlock(controlled_run)
     assert (root / "review/code.md").is_file()
 
 
-def test_rereview_uses_one_aggregate_stage_deadline(controlled_run, tmp_path):
+def test_rereview_uses_one_aggregate_stage_deadline(controlled_run, tmp_path, monkeypatch):
     root, repo, _, commit = controlled_run
+    monkeypatch.setenv("PATH", str(BASE / ".tools/bin") + os.pathsep + os.environ["PATH"])
     (root / "review/reviewed-head").write_text(commit + "\n")
     agent = tmp_path / "timed_agent.py"
     calls = root / "timed-agent-calls.jsonl"
