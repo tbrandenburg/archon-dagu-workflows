@@ -18,6 +18,7 @@ from .runtime import github_config
 
 BASE = pathlib.Path(__file__).resolve().parents[2]
 SOURCE = BASE / "vendor/archon/.archon/workflows/sdlc"
+UNVERIFIED_CANCELLATION = b"OpenCode adapter: cancellation unverified for session "
 STAGES = [
     "implement",
     "pr",
@@ -359,6 +360,10 @@ def invoke(root, stage, spec, n, v):
         if proc is not None:
             _, stderr = stop_group()
             (root / "requests" / f"{n}-{stage}.stderr.log").write_bytes(stderr)
+            if UNVERIFIED_CANCELLATION in stderr:
+                raise KeyboardInterrupt(
+                    "OpenCode session cancellation could not be verified"
+                ) from None
         if isinstance(error, subprocess.TimeoutExpired):
             raise TimeoutError(f"{stage} command exceeded {timeout}s") from None
         raise
@@ -376,6 +381,8 @@ def invoke(root, stage, spec, n, v):
             signal.pthread_sigmask(signal.SIG_SETMASK, old_mask)
     (root / "requests" / f"{n}-{stage}.stderr.log").write_bytes(stderr)
     if proc.returncode:
+        if UNVERIFIED_CANCELLATION in stderr:
+            raise KeyboardInterrupt("OpenCode session cancellation could not be verified")
         raise RuntimeError(
             stage + " command failed: " + stderr[-1000:].decode("utf-8", "backslashreplace")
         )
@@ -553,16 +560,99 @@ def typed_listing(root):
     }
     grouped = {}
     for rd in sorted(root.glob("round-*")):
+        iteration = int(rd.name.split("-")[-1])
+        mode = load(root / f"mode-{iteration}.json", {})
+        continuation = mode.get("continuation") is True
+        mode_commit = (
+            mode.get("execution", {}).get("attempt", {}).get("checkoutStart", {}).get("commit")
+        )
         for name, kind in kinds.items():
+            if continuation and name in LENSES:
+                continue
             p = rd / (name + ".json")
             if p.exists() and not (name in LENSES and load(p).get("completed") is False):
                 grouped.setdefault(kind, []).append(
                     {
                         "path": str(p.relative_to(root)),
                         "nodeId": name,
-                        "loopGroupPath": [
-                            {"groupId": "rounds", "iteration": int(rd.name.split("-")[-1])}
-                        ],
+                        **(
+                            {
+                                "producer": {
+                                    "execution": {
+                                        "path": f"review.{name}",
+                                        "invocation": {
+                                            "loopPath": [
+                                                {
+                                                    "groupId": "rounds",
+                                                    "iteration": iteration,
+                                                }
+                                            ]
+                                        },
+                                        **(
+                                            {
+                                                "attempt": {
+                                                    "checkoutStart": {
+                                                        "kind": "git",
+                                                        "commit": mode_commit,
+                                                    }
+                                                }
+                                            }
+                                            if mode_commit
+                                            else {}
+                                        ),
+                                    }
+                                }
+                            }
+                            if name in LENSES
+                            else {}
+                        ),
+                        "loopGroupPath": [{"groupId": "rounds", "iteration": iteration}],
+                    }
+                )
+        rereview_code = rd / "rereview-code.json"
+        if rereview_code.is_file():
+            try:
+                evidence = load(rereview_code)
+            except json.JSONDecodeError:
+                evidence = None
+            completed = (
+                isinstance(evidence, dict)
+                and evidence.get("completed") is True
+                and isinstance(evidence.get("findings"), list)
+                and (root / "review/code.md").is_file()
+                and (root / "review/code.md").stat().st_size > 0
+            )
+            if completed:
+                grouped.setdefault("review-lens", []).append(
+                    {
+                        "path": str(rereview_code.relative_to(root)),
+                        "nodeId": "code",
+                        "producer": {
+                            "execution": {
+                                "path": "rereview.code",
+                                "invocation": {
+                                    "loopPath": [
+                                        {
+                                            "groupId": "rounds",
+                                            "iteration": iteration,
+                                        }
+                                    ]
+                                },
+                                **(
+                                    {
+                                        "attempt": {
+                                            "checkoutStart": {
+                                                "kind": "git",
+                                                "commit": mode_commit,
+                                            }
+                                        }
+                                    }
+                                    if mode_commit
+                                    else {}
+                                ),
+                            }
+                        },
+                        "loopGroupPath": [{"groupId": "rounds", "iteration": iteration}],
                     }
                 )
     listing = {"artifactsByType": grouped, "errors": []}

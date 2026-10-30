@@ -2,6 +2,7 @@
 
 import json
 import os
+import signal
 import subprocess
 import sys
 
@@ -68,8 +69,15 @@ def test_cli_preserves_stdin_cwd_flags_and_failure(tmp_path, failure):
         f"#!{sys.executable}\n"
         "import json, os, sys\n"
         "from pathlib import Path\n"
+        "if sys.argv[1] == 'api':\n"
+        " args=sys.argv[2:]; data=json.loads(args[1]) if args[0]=='--data' else None; "
+        " path=args[-1]\n"
+        " if path == '/api/session': print(json.dumps({'data':{'id':data['id']}}))\n"
+        " elif path.endswith('/interrupt?resume=false'): print('{\"interrupted\":false}')\n"
+        " sys.exit(0)\n"
         "Path(os.environ['RECORD']).write_text(json.dumps(\n"
         " {'argv':sys.argv[1:], 'stdin':sys.stdin.read(), 'cwd':os.getcwd(), 'pwd':os.environ.get('PWD')}))\n"
+        "Path(os.environ['RUN_PIDFILE']).write_text(str(os.getpid()))\n"
         "print(json.dumps({'type':'text','part':{'messageID':'answer',"
         " 'text':'{\\\"ready\\\":true}'}}))\n"
         "if os.environ['FAILURE']=='event': print(json.dumps({'type':'error'}))\n"
@@ -80,31 +88,45 @@ def test_cli_preserves_stdin_cwd_flags_and_failure(tmp_path, failure):
         **os.environ,
         "PATH": str(tmp_path) + os.pathsep + os.environ["PATH"],
         "RECORD": str(record),
+        "RUN_PIDFILE": str(tmp_path / "run.pid"),
         "FAILURE": failure,
     }
     prompt = "Large prompt\n" * 10000 + "$(touch should-not-exist)"
-    run = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "archon_dagu.opencode",
-            "--model",
-            "provider/model",
-            "--agent",
-            "build",
-            "--variant",
-            "high",
-        ],
-        input=prompt,
-        text=True,
-        capture_output=True,
-        cwd=tmp_path,
-        env=env,
-    )
+    try:
+        run = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "archon_dagu.opencode",
+                "--model",
+                "provider/model",
+                "--agent",
+                "build",
+                "--variant",
+                "high",
+            ],
+            input=prompt,
+            text=True,
+            capture_output=True,
+            cwd=tmp_path,
+            env=env,
+            timeout=10,
+        )
+    finally:
+        run_pid = tmp_path / "run.pid"
+        if run_pid.exists():
+            try:
+                os.killpg(int(run_pid.read_text()), signal.SIGKILL)
+            except ProcessLookupError:
+                pass
     sent = json.loads(record.read_text())
+    session = sent["argv"][sent["argv"].index("--session") + 1]
+    assert session.startswith("ses_")
     assert sent == {
         "argv": [
             "run",
+            "--session",
+            session,
             "--format",
             "json",
             "--model",

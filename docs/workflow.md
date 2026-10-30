@@ -23,6 +23,9 @@ Live delivery adapter commands have a `stage_timeout_seconds` limit (default
 3600 seconds), configurable in the selected command config. It must be a finite,
 positive number no greater than 86400 seconds (24 hours); invalid values are
 rejected before spawning, rather than overflowing a platform wait after launch.
+This is one outer deadline for the entire delivery stage adapter invocation, not
+a fresh budget for each agent call. Rereview runs scope, code, and synthesis
+sequentially within that shared deadline; reserve enough time for all three.
 On a stage timeout or parent SIGINT/SIGTERM, the runner sends
 SIGTERM to the adapter process group, waits up to five seconds, then sends
 SIGKILL if it is still running. The stage fails and captured stderr is retained.
