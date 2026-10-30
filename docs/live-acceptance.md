@@ -10,7 +10,8 @@ Before the first model-backed run, record in a unique ignored
 `.runs/issue16-*` directory:
 
 - UTC deadline and maximum run attempts per matrix case;
-- the explicit provider/model and an enforceable total spending ceiling;
+- the explicit provider/model and spending policy: an enforceable ceiling, or
+  explicit owner authorization for subscription use without a dollar ceiling;
 - repository identity, disposable branch, base/head SHA, and exact intended
   GitHub writes;
 - DAGU, agent CLI, `gh`, Bun and workflow revision; do not copy credentials;
@@ -22,8 +23,8 @@ that cannot be positively identified as created by this campaign. Preserve the
 run directory and all reports before closing test PRs/issues or deleting owned
 branches. Never merge.
 
-Stop without a provider call if the selected model or budget cannot be pinned,
-the budget cannot be bounded, authentication/target permissions are uncertain,
+Stop without a provider call if the selected model or spending policy is not
+authorized, authentication/target permissions are uncertain,
 the disposable target cannot be identified, or evidence storage is unavailable.
 An execution cap alone is not a provider spending cap. Do not substitute a
 fixture, manually perform a workflow-owned GitHub write, or change models after
@@ -59,7 +60,7 @@ read-back; and cleanup disposition. A missing deterministic setup is a blocked
 case, not a simulated pass. If a result is ambiguous, inspect GitHub and the
 retained effects before any retry.
 
-## Preflight record (2026-10-29)
+## Historical preflight record (2026-10-29)
 
 The issue authorizes disposable GitHub artifacts in `tbrandenburg/playground`;
 no artifact was created by this preflight. GitHub CLI authentication and access
@@ -97,3 +98,73 @@ and recording a new deadline and attempt cap.
 
 Detailed preflight command/output evidence is retained in the ignored run
 directory `.runs/issue16-20261029-preflight/`.
+
+## Measured evidence and reduced acceptance scope
+
+The preflight above was superseded by an owner-authorized live campaign using
+`openai/gpt-6-luna`, without a dollar ceiling. It remains a historical no-spend
+record, not the current campaign result. The owner subsequently authorized a
+simpler closure scope: **operator-supervised PR/review/validation, explicit
+reconciliation, no unattended-write certification**. This changes acceptance
+expectations, not the pinned business rules or readiness checks.
+
+The original campaign's sanitized index is retained in
+`.worktrees/issue-16-live/.runs/issue16-live/final-matrix.json`; each case directory
+contains its exact command, native run ID, reports and read-back. The index's
+early path diagnosis is superseded by the corrected diagnosis here: the agent
+read `typed/nodes/code.json`, but the existing record was `nodes/code.json`.
+
+| Live case | Native run ID | Observed result |
+|---|---|---|
+| Workflow-owned PR create | `034oUK0jKylzV8ckvugsuD` | Draft PR #203 created at `db1db31f036837ec71f3e125a255336eefae0e13` |
+| Workflow-owned reuse | `034oUMGEAA1tgnR6dqQMpN` | Same PR, no duplicate |
+| Full review | `034oUNzj4jp2AUE2Vo34PM` | Justified ready at that head; canonical comment `6506450826` |
+| Continuation | `034oUUw6n2EQl9TVhfuqvr` | Same comment ID updated; not-ready due to incorrect artifact-path read |
+| Post-guidance continuation | See retained `pathfix-continuation-20261029T202500Z` report | Correct `nodes/code.json` read and ready; no prior comment existed for this run |
+| Passing validation | `034oT5uAlmbTzWUe2fgwfm` | Actual check passed |
+| Deliberately red validation | `034oUh0cjaiDtiPFDXcXaC` | Non-green, actual exit 1; classifier invented a different command/exit. Final-summary hardening now preserves runner facts; no new model classification is claimed |
+| Unstartable validation | `034oUiqChFjjwg3Y5uiap8` | Incomplete/non-green, as the source runner specifies; not a completed red environment classification |
+
+The original stale trial advanced the head before valid scope capture and did
+**not** test publication refusal. A separate controlled-input integration probe
+in `.runs/closure-campaign/20261030T062314Z/` captured a valid old-head scope,
+successfully published and updated one canonical comment, advanced only its
+disposable source branch, waited for GitHub's PR-head read-back, then invoked the
+unchanged publisher from the old checkout. It refused with “not pushed”; the
+complete comment read-back was unchanged. This used real Git/GitHub and the
+original publisher, **not native DAGU or a model review**.
+
+The same probe created real draft PR #209 while a one-use wrapper forwarded
+`gh pr create` and discarded its successful response. The composed stage refused
+replay. After independent remote read-back, an explicit operator reconciliation
+invoked the original publisher, which reused #209. This is not an automatic
+recovery recipe or delivery-protocol interruption evidence.
+
+`validation-evidence-replay.json` in that directory records the retained live
+runner/classifier inputs passed to the hardened final result stage: non-green,
+actual exit 1, raw inaccurate analysis retained and labelled unverified. It is an
+evidence replay, not a fresh provider-backed classification trial.
+
+A new native light continuation, `closure-continuation-20261030T062426Z`, used the
+same model and the corrected artifact paths. It updated existing canonical
+comment **6516435845** on #209 without a duplicate. Its prior report was the
+explicitly controlled publisher probe, not a previous live model review. It
+remained **not-ready**: synthesis compared producer path `code` to mode path
+`mode` instead of comparing their shared empty include prefix. The saved
+`typed/root.json`, `nodes/code.json` and `status/code.json` establish that the
+selected lens was present and succeeded. A local runtime clarification now
+explains sibling-node identity and still requires the correct lens, loop path,
+current-run listing and readable record. No subsequent paid run verifies that
+clarification; no readiness override or guaranteed-model-readiness claim is made.
+
+PR #203 was closed without merging and its branch/comment removed after evidence
+capture. PR #209 was also closed unmerged; its remote/local test branch and
+canonical comment were removed after read-back. The two owned worktrees were
+removed only after preserving commit history in `owned-commits.bundle`.
+`cleanup-result.json`, the before/after GitHub reads and native continuation
+results remain alongside `inventory.json` and `results.json`. Preserve that
+evidence until diagnosis is finished.
+
+The original six-row matrix is a stronger future campaign, not a claim that each
+row passed as originally specified. See [recovery and exclusions](/docs/recovery.md)
+before treating closure of #16/#18 as a prerequisite for #17 or #19.

@@ -152,6 +152,23 @@ def test_changed_reply_or_target_invalidates_approval(start):
     assert not (run.root / "effects/comment.json").exists()
 
 
+@pytest.mark.parametrize("field,value", [("repository", "other/repo"), ("issue_number", "999")])
+@pytest.mark.parametrize("location", ["inputs", "approval"])
+def test_changed_target_refused_before_post_attempt(start, field, value, location):
+    run = start("issue-response")
+    run.stage("classify")
+    run.stage("investigate")
+    run.stage("approval_snapshot")
+    target = run.ctx["inputs"] if location == "inputs" else load(run.root / "approval.json")
+    target[field] = value
+    if location == "approval":
+        save(run.root / "approval.json", target)
+    with pytest.raises(ValueError, match="changed"):
+        run.stage("post", approved=True)
+    assert not (run.root / "journal/post.started").exists()
+    assert not (run.root / "effects/comment.json").exists()
+
+
 def test_rejected_reply_writes_nothing(start):
     run = start("issue-response", "reject")
     assert not execute(run)["result"]["posted"]
@@ -403,6 +420,9 @@ print(json.dumps({'ready':True,'action':'none','findings_summary':'Controlled tr
     assert "relative to `ARTIFACTS_DIR`, not to the listing file's parent" in prompt
     assert "Resolve each listed record as `ARTIFACTS_DIR / entry.path`" in prompt
     assert "still blocks readiness" in prompt
+    assert "match the mode node's include prefix, not its complete node path" in prompt
+    assert "the code lens producer path must be `code`, not `mode`" in prompt
+    assert run.result("mode")["execution"]["path"] == "mode"
     proof = load(run.root / "received-typed-artifacts.json")
     assert proof == {
         "path": str(run.root / "typed/root.json"),

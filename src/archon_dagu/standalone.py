@@ -355,6 +355,12 @@ class Run:
                 "Read and verify the exact referenced record; missing, unreadable, or "
                 "malformed required evidence still blocks readiness. Do not infer completion "
                 "from prose or relax certification.\n"
+                "Execution-identity runtime guidance: match the mode node's include prefix, "
+                "not its complete node path. At the root, `mode` and `code` are sibling nodes "
+                "with the same empty include prefix; the code lens producer path must be "
+                "`code`, not `mode`. Within an include, `review.mode` and `review.code` share "
+                "the `review.` prefix. Still require the selected lens node identity, matching "
+                "loopGroupPath, current-run listing, successful completion and readable record.\n"
             )
         prompt += "\n\nDAGU bound inputs (authoritative):\n" + json.dumps(values)
         if node.get("output_format"):
@@ -458,6 +464,18 @@ class Run:
                         "status": "incomplete",
                         "summary": "Check runner exceeded its two-hour limit; see validation.md.",
                     }
+            if (
+                self.name == "validate"
+                and sid == "result"
+                and self.result("run")["status"] == "red"
+            ):
+                # Keep execution facts authoritative; classifier prose can invent commands/exits.
+                value["summary"] = (
+                    self.result("run")["summary"]
+                    + " Red cause (agent assessment): "
+                    + value["red_cause"]
+                    + ". Unverified classifier analysis is retained in nodes/classify.json."
+                )
             if value is not None:
                 self.check(value, node)
             save(result_path, value)

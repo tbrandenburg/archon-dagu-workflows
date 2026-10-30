@@ -41,6 +41,10 @@ For live review readiness gaps, see [typed-listing diagnostics](/docs/composed.m
 before cleaning up the run evidence.
 
 Before model-backed PR, review, or validation trials, follow the [live acceptance checklist](docs/live-acceptance.md).
+The accepted operating scope is **operator-supervised, one writer, no automatic
+uncertain-write replay**. See the [reconciliation procedure](/docs/recovery.md).
+This is not acceptance of unattended delivery, ship/upkeep mutation, or automatic
+human continuation.
 
 ## Run delivery
 

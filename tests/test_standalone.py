@@ -71,8 +71,23 @@ def test_validation_stops_failed_group_but_runs_independent_gate(tmp_path, node_
 
 def test_validation_unstartable_is_incomplete_not_red(tmp_path, node_config):
     run, _ = start(tmp_path, node_config, "validate", "incomplete")
-    assert execute(run)["result"]["red_cause"] == "incomplete"
+    result = execute(run)["result"]
+    assert result["red_cause"] == "incomplete" and result["green"] is False
     assert run.result("classify") is None
+    assert "could not start" in result["summary"]
+
+
+def test_validation_summary_uses_runner_facts_not_classifier_prose(tmp_path, node_config):
+    run, _ = start(tmp_path, node_config, "validate", "red-introduced")
+    invented = "A different command `make imaginary` exited 99."
+    run.ctx["fixture"]["agents"]["classify"]["summary"] = invented
+    report = execute(run)
+    result = report["result"]
+    assert result["green"] is False and result["red_cause"] == "introduced"
+    assert "fail failed (exit 1)" in result["summary"]
+    assert invented not in result["summary"]
+    assert run.result("classify")["summary"] == invented
+    assert "raise SystemExit(1)` failed (exit 1)" in (run.root / "validation.md").read_text()
 
 
 def test_implementation_five_turn_cap_does_not_certify_completion(tmp_path, node_config):
