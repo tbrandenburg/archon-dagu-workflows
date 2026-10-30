@@ -120,7 +120,7 @@ Worktrees and implementation branches are retained for inspection and handoff. R
 | Behavior | Status | Evidence / concession |
 |---|---|---|
 | Original prompts and JSON schemas | Preserved | Byte-identical prompt copies; source hashes and generated drift check; full JSON Schema validation including triage union branches |
-| Investigation, validation and triage result rules | Preserved | Original pinned scripts execute, including labels preview, report pointers, independent check groups, red classification and incomplete outcome |
+| Investigation, validation and triage result rules | Preserved with validation-summary concession | Original pinned scripts execute; a red validation result uses runner facts rather than classifier prose, retaining the classifier's cause as an agent assessment and its raw analysis in `nodes/classify.json` |
 | Implementation sessions and five-turn bound | Preserved with reporting concession | Fresh CLI process per executed turn, artifact/commit handoff, skip after `done`; cap exposed as completed workflow with false business outcome |
 | Parallel standup facts and state parser | Preserved | Three DAGU siblings; original reader/persist parser including JSON-wrapper fallback; GitHub facts mocked in fixtures |
 | Advisory checkout contract | Adapted | Dedicated worktrees plus after-the-fact content checks; no Archon container policy or preventive filesystem/network isolation |
@@ -130,6 +130,19 @@ Worktrees and implementation branches are retained for inspection and handoff. R
 | Retry/recovery | Conservative concession | Successful receipts reused; uncertain attempts require reconciliation rather than automatic replay |
 | Live agents, real label writes, live standup | Not established | Controlled CLI tests and fixtures; needs disposable-repository/operator trials |
 | Native DAGU scheduling | CI requirement | All twelve previews plus all 36 fixture executions; no local-runner substitution in native job |
+
+Validation has two different non-green states. A command that **starts and fails**
+produces `red` unless incomplete execution takes precedence; a red gate is
+classified as introduced, inherited, or environment. A command that **cannot
+start** makes the gate `incomplete`, even if an independent check failed; the
+runner retains observed failures in that incomplete summary. A gate timeout also
+produces `incomplete`. The classifier does not run for incomplete gates. Do not
+relabel an unstartable command as `environment` to satisfy an acceptance
+checklist. `validation.md`, `validation/*.log`, `nodes/discover.json`
+and `nodes/run.json` are the execution evidence. Classifier prose is not proof of
+the command, exit code, or cause. The final red summary preserves the runner's
+facts and labels the cause as an agent assessment; the raw analysis is retained
+for diagnosis rather than silently discarded.
 
 ### Restricted-host test aid
 

@@ -62,7 +62,7 @@ uv run .tools/bin/dagu start workflows/upkeep-live.yaml -- \
   config="config/composed.local.json"
 ```
 
-Ship/upkeep require an explicit request and create a new branch/worktree from the clean target checkout. Review/simplify/PR use a detached worktree at its HEAD. Standalone review defaults its scope to the target checkout's branch, when one exists; a requested PR whose head differs returns `ask` before lenses/publication. Fetch/advance the target yourself, then start a new run. PR creation passes the original branch explicitly to the publisher; pass `branch` yourself when the source checkout is detached. Review/simplify accept `input` as the work order. `base_branch` defaults to `main` for the simplify prompt and can be overridden.
+Ship/upkeep require an explicit request and create a new branch/worktree from the clean target checkout. Review/simplify/PR use a detached worktree at its HEAD. Standalone review defaults its scope to the target checkout's branch, when one exists; a requested PR whose head differs returns `ask` before lenses/publication. Fetch/advance the target yourself, then start a new run. PR creation passes the original branch explicitly to the publisher; pass `branch` yourself when the source checkout is detached. In that case an empty `git branch --show-current` in the inspection worktree is expected; PR preparation uses the explicit branch binding, and publication verifies the pushed head. Review/simplify accept `input` as the work order. `base_branch` defaults to `main` for the simplify prompt and can be overridden.
 
 For continuation review, pass an absolute `prior_report` path whose sibling `reviewed-head` was written by the previous publication. The original mode script verifies ancestry; `light=true` on a continuation selects only code. The original publisher rechecks the checkout and remote head before writing, stamps the reviewed commit, and updates one canonical marked comment. Its documented upstream risk remains: a write with a lost/transient response can leave two comments; the next upsert refuses duplicates and requires reconciliation.
 
@@ -102,18 +102,33 @@ prompt, listing, lens statuses and agent tool trace before cleanup. Completion
 evidence must still be verified; never override a not-ready verdict merely because
 a lens wrote a prose report.
 
+In the typed listing, each row's `path` is relative to `ARTIFACTS_DIR`, not to the
+listing's `typed/` directory. For example, resolve `nodes/code.json` as
+`$ARTIFACTS_DIR/nodes/code.json`, not `$ARTIFACTS_DIR/typed/nodes/code.json`.
+Read the exact referenced file; missing, unreadable, or malformed required evidence
+continues to block readiness.
+
+Execution identities use the mode node's **include prefix**, not its full node
+name. Root `mode` and `code` are siblings with the same empty prefix; a completed
+code lens is produced at `code`, not `mode`. Within an include, `review.mode` and
+`review.code` share `review.`. Still require the selected lens identity, correct
+loop path, current-run listing and successful completion. A live continuation
+misread these sibling identities and remained not-ready despite finding the
+correct record. The added runtime clarification has controlled-transport
+coverage, not a subsequent live ready result; preserve the original verdict.
+
 The same explicit worktree retention and human-ruling/new-run approach from [standalone operation](standalone.md#retry-questions-and-cleanup) applies. Stage receipts avoid replaying completed work. An interrupted journal entry refuses another attempt. Inspect GitHub, the checkout, `effects/`, source publication records, and `delivery/` before starting another run; a new state directory alone does not prove an uncertain write did not land. A failed nested delivery retains its original report and makes the parent fail after relaying that report.
 
 | Surface | Preserved | Concession / evidence limit |
 |---|---|---|
 | Prompts, schemas, conditions, includes | Pinned source definitions and explicit input bindings | DAGU steps record source skips as null receipts; the command step can be green while the business result is negative |
 | Parallel review and continuation | Selected lenses, exact reviewed commit/cursor, original publication/result scripts | Failed selected lenses are disclosed and force not-ready; native fixture runs use working-diff publication, not GitHub |
-| Canonical review comment | Unchanged original marker upsert and head checks | Controlled local `gh` tests verify POST→PATCH and stale-head refusal; no real GitHub publication is claimed |
+| Canonical review comment | Unchanged original marker upsert and head checks | Live campaign verified publication and same-ID update; a separate real-GitHub controlled-input probe verified POST→PATCH and refusal after a valid old-head scope was captured. See [acceptance evidence](/docs/live-acceptance.md) for boundaries |
 | Simplify cleanup | Original registered-worktree removal on success/failure | Parent worktrees remain for inspection; no Archon lifecycle/worker ownership service |
-| PR create/reuse/uncertain outcome | Original publisher used in live mode; durable receipts/uncertain journal | Fixture publication is simulated; original real push/create/recovery is not end-to-end validated |
+| PR create/reuse/uncertain outcome | Original publisher used in live mode; durable receipts/uncertain journal | Live workflow create/reuse verified; controlled-input real create with dropped response refused composed replay and reused the PR only after explicit reconciliation. Not delivery-protocol recovery evidence |
 | Ship/upkeep routes and spend gates | Original child verdicts, continues/outcome/report scripts, existing delivery reducer | Includes expanded into parent steps; delivery uses a nested artifact directory and compact controller |
 | Dependency upgrade | Original assessment/work order and lockfile requirements | Local offline npm regression proves mechanics; model choices and remote package/advisory lookups untested |
-| Human approval | Saved exact target/draft, native approval before any post, tamper checks | Reject lifecycle differs; live gate resume/reject needs an operator trial |
+| Human approval | Saved exact target/draft, native approval before any post, tamper checks | Native wait/reject/approve and receipt reuse verified with real comments. Draft tamper tested live; repository/issue tamper tested credential-free. Not delivery finish/request-changes evidence |
 | Triggers and cross-run recovery | Explicit event normalization, no automatic replay of uncertain effects | No hosted webhook, signature checking, delivery deduplication, queue state, provider/accounting parity or distributed recovery claim |
 
 No real model or public forge operation runs in CI. Controlled transport doubles and offline examples are labelled as such. The repository's existing 104 delivery scenarios, 36 standalone scenarios, and 4096 reducer comparisons remain required checks.

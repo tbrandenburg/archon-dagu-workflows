@@ -10,7 +10,7 @@ The delivery business rules are based on pinned Archon source. Original prompts,
 | Models/providers | Configurable fresh CLI calls; not Archon's aliases, usage accounting or full provider layer |
 | Reviewer isolation | Instructions plus after-the-fact checkout checks; not complete preventive sandboxing |
 | Human continuation | Root human task, finish or request changes; no reproduction of the attention agent's recommendations/manual-ready action |
-| Recovery/publication | Original publisher checks retained; interrupted or ambiguous live operations need further testing |
+| Recovery/publication | Live PR create/reuse and comment recovery evidence exists; ambiguous writes require operator reconciliation. Delivery crash recovery remains unaccepted; see [supported scope](/docs/recovery.md) |
 | Distributed execution | Not implemented for shared checkout/artifact transfer; intended for one host |
 | Live end-to-end operation | Experimental; CI never runs real agents or GitHub mutations |
 
@@ -30,6 +30,6 @@ The source contains a stale reporting caveat saying forge review threads are not
 
 Native engine CI is valuable evidence for orchestration, not proof of a live coding agent's judgments, GitHub behavior, crash recovery or human resume semantics. Further disposable-repository tests are required before unattended live use.
 
-Round exhaustion and other not-ready outcomes are covered by the local command scenarios, including their waiting human task. Native human resume/push-back semantics still need an operator trial. Standalone/composed fixture/live workflows are supported; only `simple-dry` and `detailed-dry` delivery entrypoints are removed. See [standalone](standalone.md) and [composed](composed.md) fidelity guides.
+Round exhaustion and other not-ready outcomes are covered by the local command scenarios, including their waiting human task. Native **delivery** finish/request-changes semantics still need an operator trial; native issue-response wait/reject/approve and standalone ruling/new-run behavior have been exercised separately. Standalone/composed fixture/live workflows remain available; only `simple-dry` and `detailed-dry` delivery entrypoints are removed. See [standalone](/docs/standalone.md), [composed](/docs/composed.md), and [acceptance evidence](/docs/live-acceptance.md). Closing the scoped acceptance issues does not certify unattended operation or the untested delivery protocol.
 
 The DAGU port selects the original GitHub CLI path explicitly. Archon application/CLI/plugin services are not dependencies. Exact upstream prompt files remain unchanged; rendered prompts append DAGU runtime guidance overriding Archon CLI and rerun examples.

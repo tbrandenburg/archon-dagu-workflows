@@ -10,6 +10,7 @@ import os
 import pathlib
 import re
 import shutil
+import signal
 import subprocess
 import tempfile
 
@@ -296,13 +297,89 @@ def invoke(root, stage, spec, n, v):
         fixture=spec,
     )
     save(root / "requests" / f"{n}-{stage}.json", request)
-    p = subprocess.run(
-        argv, input=json.dumps(request), text=True, capture_output=True, cwd=ctx["repo"]
-    )
-    (root / "requests" / f"{n}-{stage}.stderr.log").write_text(p.stderr)
-    if p.returncode:
-        raise RuntimeError(stage + " command failed: " + p.stderr[-1000:])
-    result = validate(stage, json.loads(p.stdout))
+    timeout = cfg.get("stage_timeout_seconds", 3600)
+    if type(timeout) not in (int, float) or not 0 < timeout <= 86400:
+        raise ValueError("stage_timeout_seconds must be a positive number no greater than 86400")
+    previous_handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT)}
+    received_signal = None
+    proc = None
+    spawning = True
+    cleaning_up = False
+
+    def interrupt(sig, _frame):
+        nonlocal received_signal
+        if received_signal is None:
+            received_signal = sig
+        if not spawning and not cleaning_up:
+            raise KeyboardInterrupt(f"interrupted by {signal.Signals(sig).name}")
+
+    def stop_group():
+        nonlocal cleaning_up
+        cleaning_up = True
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            try:
+                return proc.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                return proc.communicate(timeout=5)
+        finally:
+            # Pipe/decoding failures must never bypass descendant termination or reaping.
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            proc.wait(timeout=5)
+
+    try:
+        for sig in previous_handlers:
+            signal.signal(sig, interrupt)
+        if received_signal is not None:
+            raise KeyboardInterrupt(f"interrupted by {signal.Signals(received_signal).name}")
+        proc = subprocess.Popen(
+            argv,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            cwd=ctx["repo"],
+            start_new_session=True,
+        )
+        spawning = False
+        if received_signal is not None:
+            raise KeyboardInterrupt(f"interrupted by {signal.Signals(received_signal).name}")
+        output, stderr = proc.communicate(json.dumps(request).encode("utf-8"), timeout=timeout)
+        stdout = output.decode("utf-8")
+    except BaseException as error:
+        if proc is not None:
+            _, stderr = stop_group()
+            (root / "requests" / f"{n}-{stage}.stderr.log").write_bytes(stderr)
+        if isinstance(error, subprocess.TimeoutExpired):
+            raise TimeoutError(f"{stage} command exceeded {timeout}s") from None
+        raise
+    finally:
+        old_mask = signal.pthread_sigmask(signal.SIG_BLOCK, set(previous_handlers))
+        try:
+            for sig, handler in previous_handlers.items():
+                signal.signal(sig, handler)
+            # Decide after blocking: the temporary handler cannot record a later cancellation.
+            if received_signal is not None:
+                raise KeyboardInterrupt(
+                    f"interrupted by {signal.Signals(received_signal).name}"
+                ) from None
+        finally:
+            signal.pthread_sigmask(signal.SIG_SETMASK, old_mask)
+    (root / "requests" / f"{n}-{stage}.stderr.log").write_bytes(stderr)
+    if proc.returncode:
+        raise RuntimeError(
+            stage + " command failed: " + stderr[-1000:].decode("utf-8", "backslashreplace")
+        )
+    result = validate(stage, json.loads(stdout))
     if not cfg.get("test_transport"):
         schema = load(BASE / "schemas.json", {}).get(stage)
         schema_check(result, schema)

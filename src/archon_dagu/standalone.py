@@ -325,6 +325,43 @@ class Run:
             "No Archon CLI, plugin or service is available. Never invoke archon commands. "
             "Rerun guidance must use this workflow's documented DAGU entrypoint.\n"
         )
+        if self.name == "pr" and node["id"] == "prepare":
+            branch = self.ctx["inputs"].get("branch", "").strip()
+            if branch:
+                prompt += (
+                    "\nPR branch runtime guidance: this workflow intentionally inspects a detached "
+                    "worktree. The explicit bound `branch` input is authoritative as the PR head; "
+                    "do not derive it from `git branch --show-current`. Verify that the named "
+                    "branch resolves in this repository to the commit being prepared, and report "
+                    "that exact name as `head`. If it cannot be verified, fail preparation; never "
+                    "substitute another branch.\n"
+                )
+            else:
+                prompt += (
+                    "\nPR branch runtime guidance: no explicit `branch` input was supplied. "
+                    "A detached checkout has no usable current branch; fail preparation before "
+                    "publication rather than guessing or substituting a branch.\n"
+                )
+        if (
+            self.name == "review"
+            and self.ctx.get("prompt_namespace") == "composed"
+            and node["id"] == "synthesize"
+        ):
+            prompt += (
+                "\nTyped-artifact path runtime guidance: each `path` in the typed-artifact "
+                "listing is relative to `ARTIFACTS_DIR`, not to the listing file's parent. "
+                "Resolve each listed record as `ARTIFACTS_DIR / entry.path` (for example, "
+                "`nodes/code.json` is under the artifacts root, not under `typed/`). "
+                "Read and verify the exact referenced record; missing, unreadable, or "
+                "malformed required evidence still blocks readiness. Do not infer completion "
+                "from prose or relax certification.\n"
+                "Execution-identity runtime guidance: match the mode node's include prefix, "
+                "not its complete node path. At the root, `mode` and `code` are sibling nodes "
+                "with the same empty include prefix; the code lens producer path must be "
+                "`code`, not `mode`. Within an include, `review.mode` and `review.code` share "
+                "the `review.` prefix. Still require the selected lens node identity, matching "
+                "loopGroupPath, current-run listing, successful completion and readable record.\n"
+            )
         prompt += "\n\nDAGU bound inputs (authoritative):\n" + json.dumps(values)
         if node.get("output_format"):
             prompt += (
@@ -427,6 +464,18 @@ class Run:
                         "status": "incomplete",
                         "summary": "Check runner exceeded its two-hour limit; see validation.md.",
                     }
+            if (
+                self.name == "validate"
+                and sid == "result"
+                and self.result("run")["status"] == "red"
+            ):
+                # Keep execution facts authoritative; classifier prose can invent commands/exits.
+                value["summary"] = (
+                    self.result("run")["summary"]
+                    + " Red cause (agent assessment): "
+                    + value["red_cause"]
+                    + ". Unverified classifier analysis is retained in nodes/classify.json."
+                )
             if value is not None:
                 self.check(value, node)
             save(result_path, value)

@@ -40,6 +40,15 @@ These demo/scenario targets mock model and forge effects; the live entrypoints a
 For live review readiness gaps, see [typed-listing diagnostics](/docs/composed.md#recovery-and-fidelity)
 before cleaning up the run evidence.
 
+Before model-backed PR, review, or validation trials, follow the [live acceptance checklist](docs/live-acceptance.md).
+The accepted operating scope is **operator-supervised, one writer, no automatic
+uncertain-write replay**. See the [reconciliation procedure](/docs/recovery.md).
+This is not acceptance of unattended delivery, ship/upkeep mutation, or automatic
+human continuation.
+Delivery adapter deadlines are limited to 24 hours; cancellation remains terminal
+even during timeout cleanup, and raw stderr survives malformed output. See
+[adapter timeouts](/docs/workflow.md#adapter-timeouts-and-cancellation).
+
 ## Run delivery
 
 DAGU runs the workflow, OpenCode runs agent steps, and `gh` handles GitHub operations. No Archon installation is required.

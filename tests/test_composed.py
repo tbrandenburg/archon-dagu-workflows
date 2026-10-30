@@ -6,6 +6,7 @@ import sys
 
 import pytest
 
+from archon_dagu import standalone
 from archon_dagu.composed import Composed, Stage, setup, when
 from archon_dagu.engine import BASE, SOURCE, load, save
 from archon_dagu.local_runner import run as local_run
@@ -151,6 +152,23 @@ def test_changed_reply_or_target_invalidates_approval(start):
     assert not (run.root / "effects/comment.json").exists()
 
 
+@pytest.mark.parametrize("field,value", [("repository", "other/repo"), ("issue_number", "999")])
+@pytest.mark.parametrize("location", ["inputs", "approval"])
+def test_changed_target_refused_before_post_attempt(start, field, value, location):
+    run = start("issue-response")
+    run.stage("classify")
+    run.stage("investigate")
+    run.stage("approval_snapshot")
+    target = run.ctx["inputs"] if location == "inputs" else load(run.root / "approval.json")
+    target[field] = value
+    if location == "approval":
+        save(run.root / "approval.json", target)
+    with pytest.raises(ValueError, match="changed"):
+        run.stage("post", approved=True)
+    assert not (run.root / "journal/post.started").exists()
+    assert not (run.root / "effects/comment.json").exists()
+
+
 def test_rejected_reply_writes_nothing(start):
     run = start("issue-response", "reject")
     assert not execute(run)["result"]["posted"]
@@ -166,6 +184,43 @@ def test_uncertain_pr_publication_is_durable_and_cannot_replay(start):
     assert (run.root / "effects/pr-uncertain.json").exists()
     with pytest.raises(ValueError, match="Uncertain"):
         run.stage("publish")
+
+
+@pytest.mark.parametrize(
+    "branch,expected",
+    [
+        ("workflow-test-issue16/validation", "authoritative as the PR head"),
+        ("", "no explicit `branch` input was supplied"),
+    ],
+)
+def test_pr_prepare_runtime_guidance_handles_detached_checkout(
+    start, monkeypatch, branch, expected
+):
+    run = start("pr")
+    run.ctx["inputs"]["branch"] = branch
+    if branch:
+        git(run.repo, "branch", branch)
+    git(run.repo, "checkout", "--detach", "HEAD")
+    assert git(run.repo, "branch", "--show-current") == ""
+    stage = Stage(run, "prepare")
+    stage.fixture = False
+    stage.ctx["mode"] = "live"
+    prompt = {}
+
+    def capture(argv, cwd, env, stdin, timeout):
+        prompt["text"] = stdin
+        return "{}"
+
+    monkeypatch.setattr(standalone, "invoke", capture)
+    stage.agent(stage.nodes["prepare"], "prepare")
+
+    assert expected in prompt["text"]
+    if branch:
+        assert "do not derive it from `git branch --show-current`" in prompt["text"]
+        assert "fail preparation; never substitute another branch" in prompt["text"]
+        assert "workflow-test-issue16/validation" in prompt["text"]
+    else:
+        assert "fail preparation before publication" in prompt["text"]
 
 
 def test_local_harness_never_implicitly_approves_a_live_gate(tmp_path):
@@ -345,6 +400,8 @@ listing_path=pathlib.Path(os.environ['TYPED_ARTIFACTS_FILE'])
 listing=json.loads(listing_path.read_text())
 assert listing == json.loads(sys.argv[1]), listing
 outputs={row['nodeId']:json.loads((root/row['path']).read_text()) for row in listing['artifactsByType']['review-lens']}
+assert all((root/row['path']).is_file() for row in listing['artifactsByType']['review-lens'])
+assert not (listing_path.parent/'nodes/code.json').exists()
 (root/'received-typed-artifacts.json').write_text(json.dumps({'path':str(listing_path),'listing':listing,'outputs':outputs}))
 print(json.dumps({'ready':True,'action':'none','findings_summary':'Controlled transport','report':{'type':'archon_artifact','run_id':root.name,'path':'review/report.md'},'discoveries':[],'contract_left':[]}))
 """)
@@ -360,6 +417,12 @@ print(json.dumps({'ready':True,'action':'none','findings_summary':'Controlled tr
     assert "$mode.output.head" not in prompt
     assert git(run.repo, "rev-parse", "HEAD") in prompt
     assert str(run.root / "typed/root.json") in prompt
+    assert "relative to `ARTIFACTS_DIR`, not to the listing file's parent" in prompt
+    assert "Resolve each listed record as `ARTIFACTS_DIR / entry.path`" in prompt
+    assert "still blocks readiness" in prompt
+    assert "match the mode node's include prefix, not its complete node path" in prompt
+    assert "the code lens producer path must be `code`, not `mode`" in prompt
+    assert run.result("mode")["execution"]["path"] == "mode"
     proof = load(run.root / "received-typed-artifacts.json")
     assert proof == {
         "path": str(run.root / "typed/root.json"),
