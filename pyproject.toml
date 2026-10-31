@@ -25,7 +25,8 @@ packages = ["src/archon_dagu"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --basetemp=.pytest-tmp"
+addopts = "-ra --basetemp=.pytest-tmp -m 'not native'"
+markers = ["native: requires pinned Dagu and Linux ss/ps; run through the native gate"]
 
 [tool.ruff]
 target-version = "py312"

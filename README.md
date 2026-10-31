@@ -40,6 +40,12 @@ These demo/scenario targets mock model and forge effects; the live entrypoints a
 For live review readiness gaps, see [typed-listing diagnostics](/docs/composed.md#recovery-and-fidelity)
 before cleaning up the run evidence.
 
+The [native OpenCode harness evaluation](/docs/dagu-harness-evaluation.md) records
+why `investigate-live` retains its adapter on pinned Dagu 2.24.0, with isolated
+no-provider runtime probes and cancellation/output contract evidence. Run those
+four probes with `make harness-native` (also included in `ci-native`); default
+pytest excludes the registered `native` marker and retains the renderer guard.
+
 **Live runs are authorized at any time**, including real provider calls and
 workflow-owned GitHub writes, without additional per-run approval or a required
 provider spending ceiling. Use the configured authenticated agent/model. This
@@ -126,6 +132,7 @@ Task exposes the same targets and variables:
 | `format`, `lint`, `source-check` | Format, check style, verify upstream hashes |
 | `test`, `parity`, `scenarios` | Contracts, 4096 reducer comparisons, 52 delivery mock-effect scenarios |
 | `validate`, `native-smoke` | Native previews / six delivery DAGU executions with mock effects |
+| `harness-native` | Four controlled Dagu harness contract probes; requires pinned Dagu and Linux `ss`/`ps` |
 | `standalone-demo`, `standalone-scenarios`, `standalone-native` | Standalone fixtures locally / native validation and execution |
 | `composed-demo`, `composed-scenarios`, `composed-native` | Composed fixtures locally / native validation and execution |
 | `fixture-demo`, `demo` | Select `VARIANT`, `CASE`, `EXECUTOR=local` or `dagu` |
