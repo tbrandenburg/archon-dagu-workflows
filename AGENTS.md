@@ -36,13 +36,14 @@ Run commands from the repository root. `make` or `make help` lists the available
 | `make source-check` | Verify immutable upstream source hashes. |
 | `make format` | Apply Ruff fixes and formatting to first-party Python. |
 | `make lint` | Check Ruff rules and formatting without changing files. |
-| `make test` | Run unit, contract and controlled subprocess tests without provider/forge credentials. |
+| `make test` | Run unit, contract and controlled subprocess tests without provider/forge credentials. Excludes the registered `native` pytest marker; the source renderer guard remains included. |
 | `make parity` | Compare 4,096 reducer decisions against the pinned Archon implementation. |
 | `make scenarios` | Run 52 local command scenarios across both live definitions with explicit mock transports. Includes not-ready outcomes waiting for human input. |
 | `make validate` | Validate the three DAG definitions and preview both live entrypoints with native `dagu dry`. Previews do not run agents or stage commands. |
 | `make native-smoke` | Execute six scenarios through actual DAGU, with agent/forge effects still mocked. Requires Unix-socket support. |
+| `make harness-native` | Run four controlled native harness pytest cases (`pytest -m native`). Requires pinned Dagu 2.24.0, Linux `ss`/`ps` and Unix sockets; no provider/forge calls. |
 | `make ci` | Run lint, source/generated checks, tests, parity and all 127 local scenarios. No real model or public-forge calls. |
-| `make ci-native` | Run native validation/previews and 81 native mock-effect runs (6 delivery, 36 standalone, 39 composed). |
+| `make ci-native` | Run native validation/previews and 85 native controlled-effect runs (6 delivery, 4 harness probes, 36 standalone, 39 composed). |
 | `make clean` | Remove `.runs/` artifacts. Refuses registered Git worktrees; inspect/preserve useful run evidence before cleanup. |
 | `make standalone-demo WORKFLOW=investigate STANDALONE_CASE=happy` | Run a standalone fixture. `EXECUTOR=dagu` uses native DAGU; agent/forge responses remain mocked. |
 | `make standalone-scenarios` | Run all 36 standalone fixture scenarios locally. |
@@ -102,6 +103,8 @@ Keep Make and Task targets aligned. After generator edits, run `make generate` a
 
 ## Lessons Learned
 
+- 2026-10-31: Pitfall: native contract tests added engine/platform dependencies to default pytest. Prevention: route native tests through an explicit native gate; keep portable renderer/schema guards in the default gate.
+- 2026-10-31: Pitfall: concurrent validation gates deleted each other's shared pytest basetemp, causing false prerequisite failures. Prevention: serialize gates sharing a checkout or assign distinct basetemp directories before parallel execution.
 - 2026-10-30: Pitfall: a compound stage can run several sequential agent calls under one outer deadline, and timed communication loops can deadlock large stdin. Prevention: treat stage limits as aggregate, test end-to-end large prompts and compound timing, and use single `communicate(input=...)` with owned cancellation.
 - 2026-10-29: Pitfall: Calling DAGU outside the project uv environment broke child Python imports. Prevention rule/countermeasure: launch from the repository root with `uv run .tools/bin/dagu ...`.
 - 2026-10-29: Pitfall: Confusing the local checkout path with the GitHub repository identity, or omitting issue-response identifiers, failed setup. Prevention rule/countermeasure: pass absolute `repo`, qualified `repository`, and positive `issue_number` explicitly.

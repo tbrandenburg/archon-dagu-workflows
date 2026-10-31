@@ -10,7 +10,7 @@ STANDALONE_CASE ?= happy
 COMPOSED_WORKFLOW ?= review
 COMPOSED_CASE ?= happy
 export VARIANT MODEL AGENT COMMANDS REPO WORK_FILE STATE_DIR
-.PHONY: standalone-demo standalone-scenarios standalone-native composed-demo composed-scenarios composed-native configure-agent doctor agent-smoke deliver fixture-demo help setup tools generate format lint source-check generated-check test parity scenarios validate demo native-smoke ci ci-native clean
+.PHONY: standalone-demo standalone-scenarios standalone-native composed-demo composed-scenarios composed-native configure-agent doctor agent-smoke deliver fixture-demo help setup tools generate format lint source-check generated-check test parity scenarios validate demo native-smoke harness-native ci ci-native clean
 help: ## List common commands
 	@awk 'BEGIN {FS = ":.*## "} /^[a-zA-Z_-]+:.*## / {printf "  %-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 setup: ## Install locked Python dependencies
@@ -41,8 +41,10 @@ demo: ## Run a live entrypoint with mock effects (VARIANT, CASE, EXECUTOR)
 	$(UV) run python scripts/project.py demo --variant '$(VARIANT)' --case '$(CASE)' --executor '$(EXECUTOR)'
 native-smoke: ## Run six actual DAGU fixture executions
 	$(UV) run python scripts/project.py native-smoke
+harness-native: ## Run four controlled native harness contract probes (Dagu, Linux ss/ps)
+	$(UV) run pytest -m native
 ci: lint source-check generated-check test parity scenarios standalone-scenarios composed-scenarios  ## Run credential-free checks
-ci-native: validate native-smoke standalone-native composed-native  ## Run native engine checks
+ci-native: validate native-smoke harness-native standalone-native composed-native  ## Run native engine checks
 clean: ## Remove run artifacts only
 	$(UV) run python scripts/project.py clean
 

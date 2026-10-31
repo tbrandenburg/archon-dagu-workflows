@@ -51,6 +51,9 @@ tasks:
   native-smoke:
     desc: Execute six fixture scenarios in the actual DAGU engine
     cmds: [uv run python scripts/project.py native-smoke]
+  harness-native:
+    desc: Run four controlled native harness contract probes (Dagu, Linux ss/ps)
+    cmds: [uv run pytest -m native]
   ci:
     desc: Run credential-free quality, contract, parity and integration checks
     cmds:
@@ -67,6 +70,7 @@ tasks:
     cmds:
       - task: validate
       - task: native-smoke
+      - task: harness-native
       - task: standalone-native
       - task: composed-native
   clean:
